@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <title>Shorts Shuffle</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="stage">
+    <!-- 영상 플레이어 (스와이프할 때 이 프레임이 위아래로 움직인다) -->
+    <div class="frame" id="frame">
+      <div id="player"></div>
+    </div>
+
+    <!-- iframe 위를 덮어서 터치/마우스 입력을 대신 받는 투명 레이어 -->
+    <div class="touch-layer" id="touchLayer"></div>
+
+    <!-- 위/아래는 유튜브 숏츠 자체 UI(채널명, 제목, 좋아요)가 차지하므로 버튼은 오른쪽 가운데에 둔다 -->
+    <nav class="side-actions">
+      <button class="round-btn" id="soundBtn" type="button" aria-label="소리 켜기">🔇</button>
+      <button class="round-btn" id="shuffleBtn" type="button" aria-label="다시 섞기">🔀</button>
+    </nav>
+
+    <div class="center-icon" id="centerIcon" aria-hidden="true"></div>
+
+    <div class="hint" id="hint">↑ 위로 스와이프해서 다음 영상</div>
+    <div class="toast" id="toast" role="status"></div>
+  </main>
+
+  <script src="js/videos.js"></script>
+  <script src="js/app.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
