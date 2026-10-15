@@ -288,3 +288,10 @@ function flashIcon(symbol) {
   void centerIcon.offsetWidth; // 애니메이션을 처음부터 다시 재생
   centerIcon.classList.add('show');
 }
+
+// ===== PWA: 서비스 워커 등록 (홈 화면에 추가, 빠른 실행) =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
