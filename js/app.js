@@ -8,6 +8,7 @@ const TAP_MAX_TIME = 300;    // ms
 const SLIDE_MS = 250;        // style.css 의 --slide-duration 과 맞춘다
 
 // ===== 상태 =====
+let videoIds = VIDEO_IDS.slice(); // 현재 재생 대상 (기본 목록 또는 불러온 재생목록/채널)
 let queue = [];          // 재생 순서 (섞은 묶음을 계속 이어 붙인다)
 let pos = 0;             // queue 에서 현재 재생 중인 위치
 let player = null;
@@ -36,7 +37,7 @@ function shuffle(arr) {
 
 // 새로 섞은 묶음을 queue 뒤에 붙인다. 묶음 경계에서 같은 영상이 연달아 나오지 않게 한다.
 function extendQueue() {
-  const batch = shuffle(VIDEO_IDS);
+  const batch = shuffle(videoIds);
   if (batch.length > 1 && batch[0] === queue[queue.length - 1]) {
     [batch[0], batch[1]] = [batch[1], batch[0]];
   }
@@ -47,6 +48,17 @@ function resetQueue() {
   queue = [];
   pos = 0;
   extendQueue();
+}
+
+// 재생 대상을 새 목록으로 바꾸고 첫 영상부터 다시 섞어서 재생한다
+function setVideos(ids) {
+  videoIds = ids.slice();
+  errorStreak = 0;
+  resetQueue();
+  if (player) {
+    loadCurrent();
+    slide(1);
+  }
 }
 
 // ===== YouTube 플레이어 =====
@@ -78,19 +90,27 @@ function onPlayerReady() {
   player.mute();
   player.playVideo();
   updateSoundBtn();
+  updateVideoInfo(queue[pos]);
+  restoreSavedSource();
 }
 
 function onPlayerStateChange(e) {
   if (e.data === YT.PlayerState.PLAYING) {
     errorStreak = 0;
   } else if (e.data === YT.PlayerState.ENDED) {
-    go(1);
+    // 댓글/불러오기 창을 보는 중에는 다음 영상으로 넘기지 않고 처음부터 반복한다
+    if (isSheetOpen()) {
+      player.seekTo(0);
+      player.playVideo();
+    } else {
+      go(1);
+    }
   }
 }
 
 function onPlayerError() {
   errorStreak++;
-  if (errorStreak >= VIDEO_IDS.length) {
+  if (errorStreak >= videoIds.length) {
     showToast('재생할 수 있는 영상이 없어요');
     return;
   }
@@ -103,6 +123,7 @@ function loadCurrent() {
   player.loadVideoById(queue[pos]);
   if (muted) player.mute();
   else player.unMute();
+  updateVideoInfo(queue[pos]);
 }
 
 // ===== 이동 =====
@@ -219,6 +240,8 @@ touchLayer.addEventListener('pointercancel', () => {
 
 // ===== PC 테스트용: 키보드 / 마우스 휠 =====
 document.addEventListener('keydown', (e) => {
+  // 입력창에 타이핑 중이거나 아래 창(댓글/불러오기)이 열려 있으면 영상 조작을 하지 않는다
+  if (e.target.matches('input, textarea') || isSheetOpen()) return;
   if (e.key === 'ArrowDown' || e.key === 'ArrowRight') go(1);
   else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') go(-1);
   else if (e.key === ' ') { e.preventDefault(); togglePlay(); }
