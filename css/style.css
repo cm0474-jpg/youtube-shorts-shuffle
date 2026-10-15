@@ -524,13 +524,6 @@ button.action:active .round-btn {
   font-weight: 700;
 }
 
-.sheet-note {
-  padding: 8px 4px 4px;
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
 /* 설명 */
 .desc-title {
   padding-top: 8px;
