@@ -205,18 +205,20 @@ async function fetchChannelAvatar(channelId) {
 }
 
 // ===== 댓글 =====
-async function fetchComments(videoId, pageToken) {
+// order: 'relevance' (인기순) 또는 'time' (최신순)
+async function fetchComments(videoId, pageToken, order = 'relevance') {
   const data = await ytGet('commentThreads', {
     part: 'snippet',
     videoId,
     maxResults: 20,
-    order: 'relevance',
+    order,
     textFormat: 'plainText',
     pageToken,
   });
   const comments = (data.items || []).map((item) => {
     const c = item.snippet.topLevelComment.snippet;
     return {
+      id: item.id,
       author: c.authorDisplayName,
       avatar: c.authorProfileImageUrl,
       text: c.textDisplay,
@@ -226,6 +228,25 @@ async function fetchComments(videoId, pageToken) {
     };
   });
   return { comments, nextPageToken: data.nextPageToken };
+}
+
+// 댓글의 답글 (1 unit)
+async function fetchReplies(parentId, pageToken) {
+  const data = await ytGet('comments', {
+    part: 'snippet',
+    parentId,
+    maxResults: 20,
+    textFormat: 'plainText',
+    pageToken,
+  });
+  const replies = (data.items || []).map((item) => ({
+    author: item.snippet.authorDisplayName,
+    avatar: item.snippet.authorProfileImageUrl,
+    text: item.snippet.textDisplay,
+    likeCount: item.snippet.likeCount || 0,
+    publishedAt: item.snippet.publishedAt,
+  }));
+  return { replies, nextPageToken: data.nextPageToken };
 }
 
 // ===== 표시용 포맷 =====

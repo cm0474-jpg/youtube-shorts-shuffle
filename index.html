@@ -31,16 +31,25 @@
     <!-- 좋아요/댓글 버튼은 API 키가 있을 때만 보인다 -->
     <nav class="side-actions">
       <div class="action" id="likeAction" hidden>
-        <span class="round-btn" aria-hidden="true">👍</span>
+        <span class="action-icon" data-icon="like"></span>
         <span class="action-label" id="likeCount">좋아요</span>
       </div>
       <button class="action" id="commentBtn" type="button" aria-label="댓글 보기" hidden>
-        <span class="round-btn" aria-hidden="true">💬</span>
+        <span class="action-icon" data-icon="comment"></span>
         <span class="action-label" id="commentCount">댓글</span>
       </button>
-      <button class="round-btn" id="soundBtn" type="button" aria-label="소리 켜기">🔇</button>
-      <button class="round-btn" id="shuffleBtn" type="button" aria-label="다시 섞기">🔀</button>
-      <button class="round-btn" id="sourceBtn" type="button" aria-label="다른 채널/재생목록 불러오기">📂</button>
+      <button class="action" id="soundBtn" type="button" aria-label="소리 켜기">
+        <span class="action-icon" id="soundIcon" data-icon="volumeOff"></span>
+        <span class="action-label" id="soundLabel">음소거</span>
+      </button>
+      <button class="action" id="shuffleBtn" type="button" aria-label="다시 섞기">
+        <span class="action-icon" data-icon="shuffle"></span>
+        <span class="action-label">셔플</span>
+      </button>
+      <button class="action" id="sourceBtn" type="button" aria-label="다른 채널 검색">
+        <span class="action-icon" data-icon="search"></span>
+        <span class="action-label">검색</span>
+      </button>
     </nav>
 
     <!-- 영상이 멈췄을 때 유튜브가 띄우는 공유 버튼 / Shorts 로고 자리에 겹치는 투명 버튼 -->
@@ -48,9 +57,16 @@
     <button class="yt-hit yt-logo-hit" id="ytLogoHit" type="button" aria-label="유튜브 앱에서 보기" hidden></button>
 
     <!-- 오른쪽 위 ⋮ 메뉴 (설명, 자막, 화질) -->
-    <button class="more-btn" id="moreBtn" type="button" aria-label="더보기">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-    </button>
+    <button class="more-btn" id="moreBtn" type="button" aria-label="더보기" data-icon="more"></button>
+
+    <!-- 재생 진행 바: 누르거나 끌어서 영상 시간을 옮긴다 -->
+    <div class="progress" id="progress" role="slider" aria-label="재생 위치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+        <div class="progress-thumb" id="progressThumb"></div>
+      </div>
+    </div>
+    <div class="progress-time" id="progressTime" hidden></div>
 
     <div class="center-icon" id="centerIcon" aria-hidden="true"></div>
 
@@ -58,10 +74,15 @@
     <div class="sheet-backdrop" id="sheetBackdrop"></div>
 
     <section class="sheet" id="commentsSheet" aria-hidden="true" aria-labelledby="commentsTitle">
+      <div class="sheet-handle" aria-hidden="true"></div>
       <header class="sheet-header">
-        <h2 id="commentsTitle">댓글</h2>
-        <button class="sheet-close" type="button" data-close aria-label="닫기">✕</button>
+        <h2><span id="commentsTitle">댓글</span> <span class="sheet-count" id="commentsCountLabel"></span></h2>
+        <button class="sheet-close" type="button" data-close aria-label="닫기" data-icon="close"></button>
       </header>
+      <div class="chips" role="tablist" aria-label="댓글 정렬">
+        <button class="chip selected" type="button" role="tab" aria-selected="true" data-order="relevance">인기순</button>
+        <button class="chip" type="button" role="tab" aria-selected="false" data-order="time">최신순</button>
+      </div>
       <div class="sheet-body">
         <ul class="comment-list" id="commentsList"></ul>
         <p class="sheet-status" id="commentsStatus"></p>
@@ -96,9 +117,10 @@
     </section>
 
     <section class="sheet" id="descSheet" aria-hidden="true" aria-labelledby="descHeading">
+      <div class="sheet-handle" aria-hidden="true"></div>
       <header class="sheet-header">
         <h2 id="descHeading">설명</h2>
-        <button class="sheet-close" type="button" data-close aria-label="닫기">✕</button>
+        <button class="sheet-close" type="button" data-close aria-label="닫기" data-icon="close"></button>
       </header>
       <div class="sheet-body">
         <p class="sheet-status" id="descStatus"></p>
@@ -119,9 +141,10 @@
     </section>
 
     <section class="sheet sheet-compact" id="captionSheet" aria-hidden="true" aria-labelledby="captionHeading">
+      <div class="sheet-handle" aria-hidden="true"></div>
       <header class="sheet-header">
         <h2 id="captionHeading">자막</h2>
-        <button class="sheet-close" type="button" data-close aria-label="닫기">✕</button>
+        <button class="sheet-close" type="button" data-close aria-label="닫기" data-icon="close"></button>
       </header>
       <div class="sheet-body">
         <ul class="option-list" id="captionList"></ul>
@@ -130,9 +153,10 @@
     </section>
 
     <section class="sheet sheet-compact" id="qualitySheet" aria-hidden="true" aria-labelledby="qualityHeading">
+      <div class="sheet-handle" aria-hidden="true"></div>
       <header class="sheet-header">
         <h2 id="qualityHeading">화질</h2>
-        <button class="sheet-close" type="button" data-close aria-label="닫기">✕</button>
+        <button class="sheet-close" type="button" data-close aria-label="닫기" data-icon="close"></button>
       </header>
       <div class="sheet-body">
         <ul class="option-list">
@@ -142,9 +166,10 @@
     </section>
 
     <section class="sheet sheet-compact" id="shareSheet" aria-hidden="true" aria-labelledby="shareHeading">
+      <div class="sheet-handle" aria-hidden="true"></div>
       <header class="sheet-header">
         <h2 id="shareHeading">공유</h2>
-        <button class="sheet-close" type="button" data-close aria-label="닫기">✕</button>
+        <button class="sheet-close" type="button" data-close aria-label="닫기" data-icon="close"></button>
       </header>
       <div class="sheet-body">
         <p class="share-link" id="shareLink"></p>
@@ -155,19 +180,23 @@
     <!-- 시작 화면: 처음 열면 채널을 검색하거나 링크를 넣는 화면이 나오고, 재생 중에는 📂 로 다시 연다 -->
     <section class="start-screen" id="startScreen" aria-labelledby="startTitle">
       <div class="start-inner">
-        <button class="start-back" id="startBack" type="button" hidden>← 재생 화면으로 돌아가기</button>
-        <h1 id="startTitle">Shorts Shuffle</h1>
-        <p class="start-desc">유튜브 채널의 숏츠나 재생목록을 랜덤으로 재생해요</p>
+        <button class="start-back" id="startBack" type="button" hidden>
+          <span data-icon="back"></span>
+          <span>재생 화면으로 돌아가기</span>
+        </button>
+        <div class="start-hero">
+          <img class="start-logo" src="icons/icon-192.png" alt="" width="64" height="64">
+          <h1 id="startTitle">Shorts Shuffle</h1>
+          <p class="start-desc">유튜브 채널의 숏츠를 랜덤으로 재생해요</p>
+        </div>
         <form class="search-bar" id="sourceForm" role="search">
           <div class="search-field">
             <input id="sourceInput" type="text" enterkeyhint="search" autocomplete="off" spellcheck="false"
                    placeholder="채널 검색 또는 링크 붙여넣기" aria-label="채널 검색 또는 링크"
                    role="combobox" aria-autocomplete="list" aria-controls="suggestList" aria-expanded="false">
-            <button class="search-clear" id="searchClear" type="button" aria-label="검색어 지우기" hidden>✕</button>
+            <button class="search-clear" id="searchClear" type="button" aria-label="검색어 지우기" data-icon="close" hidden></button>
           </div>
-          <button class="search-submit" id="sourceSubmit" type="submit" aria-label="검색">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.47 6.47 0 0 0 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-          </button>
+          <button class="search-submit" id="sourceSubmit" type="submit" aria-label="검색" data-icon="search"></button>
         </form>
         <ul class="suggest-list" id="suggestList" role="listbox" hidden></ul>
         <p class="sheet-status" id="sourceStatus" role="status"></p>
@@ -176,16 +205,14 @@
           원래 검색어: <button type="button" id="searchOriginal"></button>
         </p>
         <ul class="channel-results" id="channelResults"></ul>
-        <ul class="source-help" id="sourceHelp">
-          <li>채널 이름으로 검색하거나 채널 링크(youtube.com/@채널이름)를 붙여넣으면 그 채널의 숏츠를 불러와요</li>
-          <li>재생목록 링크(youtube.com/playlist?list=…)도 넣을 수 있어요</li>
-        </ul>
+        <p class="source-help" id="sourceHelp">채널 이름을 검색하거나, 채널·재생목록 링크를 붙여넣으세요</p>
         <p class="source-current" id="sourceCurrent"></p>
       </div>
     </section>
 
   </main>
 
+  <script src="js/icons.js"></script>
   <script src="js/config.js"></script>
   <script src="js/youtube-api.js"></script>
   <script src="js/app.js"></script>

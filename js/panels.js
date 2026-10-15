@@ -11,7 +11,6 @@ const sourceBtn = document.getElementById('sourceBtn');
 const sheetBackdrop = document.getElementById('sheetBackdrop');
 
 const commentsSheet = document.getElementById('commentsSheet');
-const commentsTitle = document.getElementById('commentsTitle');
 const commentsList = document.getElementById('commentsList');
 const commentsStatus = document.getElementById('commentsStatus');
 const commentsMore = document.getElementById('commentsMore');
@@ -76,6 +75,35 @@ function isOverlayOpen() {
 }
 
 sheetBackdrop.addEventListener('click', closeSheet);
+
+// 유튜브 앱처럼 손잡이나 제목 줄을 아래로 끌어서 창을 닫는다
+document.querySelectorAll('.sheet').forEach((sheet) => {
+  let startY = null;
+  let dragY = 0;
+  sheet.querySelectorAll('.sheet-handle, .sheet-header').forEach((grip) => {
+    grip.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('button')) return; // 닫기(✕) 버튼은 그냥 누르게 둔다
+      startY = e.clientY;
+      dragY = 0;
+      sheet.style.transition = 'none';
+      grip.setPointerCapture(e.pointerId);
+    });
+    grip.addEventListener('pointermove', (e) => {
+      if (startY === null) return;
+      dragY = Math.max(0, e.clientY - startY);
+      sheet.style.transform = `translateY(${dragY}px)`;
+    });
+    const end = () => {
+      if (startY === null) return;
+      startY = null;
+      sheet.style.transition = '';
+      sheet.style.transform = '';
+      if (dragY > 80) closeSheet();
+    };
+    grip.addEventListener('pointerup', end);
+    grip.addEventListener('pointercancel', end);
+  });
+});
 document.querySelectorAll('[data-close]').forEach((btn) => btn.addEventListener('click', closeSheet));
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
@@ -87,15 +115,31 @@ function setStatus(el, message) {
   el.textContent = message;
 }
 
-// ===== 댓글 =====
+// ===== 댓글 (유튜브 앱 댓글 창처럼: 인기순/최신순, 답글 펼치기) =====
+const commentsCountLabel = document.getElementById('commentsCountLabel');
+const commentChips = commentsSheet.querySelectorAll('.chip');
+
 let commentsVideoId = null;   // 지금 댓글 창에 불러온 영상
+let commentsOrder = 'relevance';
 let commentsNextToken = null; // 다음 페이지 토큰
 
 commentBtn.addEventListener('click', openComments);
 commentsMore.addEventListener('click', loadMoreComments);
 
+commentChips.forEach((chip) => chip.addEventListener('click', () => {
+  if (chip.dataset.order === commentsOrder) return;
+  commentsOrder = chip.dataset.order;
+  commentsVideoId = null; // 정렬이 바뀌면 처음부터 다시 불러온다
+  openComments();
+}));
+
 function openComments() {
   openSheet(commentsSheet);
+  commentChips.forEach((chip) => {
+    const selected = chip.dataset.order === commentsOrder;
+    chip.classList.toggle('selected', selected);
+    chip.setAttribute('aria-selected', String(selected));
+  });
   if (commentsVideoId === currentVideoId) return; // 같은 영상이면 이미 불러온 댓글을 그대로 보여준다
 
   commentsVideoId = currentVideoId;
@@ -103,19 +147,18 @@ function openComments() {
   commentsList.replaceChildren();
   commentsSheet.querySelector('.sheet-body').scrollTop = 0;
   const stats = statsCache.get(currentVideoId);
-  commentsTitle.textContent = stats?.commentCount != null
-    ? `댓글 ${stats.commentCount.toLocaleString('ko-KR')}개`
-    : '댓글';
+  commentsCountLabel.textContent = stats?.commentCount != null ? stats.commentCount.toLocaleString('ko-KR') : '';
   loadMoreComments();
 }
 
 async function loadMoreComments() {
   const videoId = commentsVideoId;
+  const order = commentsOrder;
   commentsMore.hidden = true;
   setStatus(commentsStatus, '불러오는 중...');
   try {
-    const { comments, nextPageToken } = await fetchComments(videoId, commentsNextToken || undefined);
-    if (videoId !== commentsVideoId) return; // 그사이 다른 영상의 댓글 창을 열었으면 버린다
+    const { comments, nextPageToken } = await fetchComments(videoId, commentsNextToken || undefined, order);
+    if (videoId !== commentsVideoId || order !== commentsOrder) return; // 그사이 다른 영상/정렬로 바뀌었으면 버린다
     comments.forEach((c) => commentsList.append(renderComment(c)));
     commentsNextToken = nextPageToken || null;
     commentsMore.hidden = !commentsNextToken;
@@ -143,25 +186,85 @@ function renderComment(c) {
   const body = document.createElement('div');
   body.className = 'comment-body';
 
+  // 유튜브 앱처럼 "@핸들 · 3개월 전" 을 회색으로 한 줄에
   const meta = document.createElement('div');
   meta.className = 'comment-meta';
-  const author = document.createElement('strong');
+  const author = document.createElement('span');
+  author.className = 'comment-handle';
   author.textContent = c.author;
   const time = document.createElement('span');
-  time.textContent = formatTimeAgo(c.publishedAt);
+  time.textContent = `· ${formatTimeAgo(c.publishedAt)}`;
   meta.append(author, time);
 
   const text = document.createElement('p');
   text.className = 'comment-text';
   text.textContent = c.text;
 
-  const foot = document.createElement('div');
-  foot.className = 'comment-foot';
-  foot.textContent = `👍 ${formatCount(c.likeCount)}` + (c.replyCount ? ` · 답글 ${c.replyCount}개` : '');
+  // 좋아요 수 (좋아요/싫어요/답글 쓰기는 로그인이 필요해서 숫자만 보여준다)
+  const actions = document.createElement('div');
+  actions.className = 'comment-actions';
+  actions.innerHTML = icon('like');
+  const likes = document.createElement('span');
+  likes.textContent = c.likeCount ? formatCount(c.likeCount) : '';
+  actions.append(likes);
 
-  body.append(meta, text, foot);
+  body.append(meta, text, actions);
+  if (c.replyCount) body.append(...repliesSection(c));
   li.append(avatar, body);
   return li;
+}
+
+// "답글 N개" 를 누르면 답글을 펼친다
+function repliesSection(c) {
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'replies-toggle';
+  const list = document.createElement('ul');
+  list.className = 'reply-list';
+  list.hidden = true;
+  const more = document.createElement('button');
+  more.type = 'button';
+  more.className = 'replies-toggle';
+  more.hidden = true;
+  more.innerHTML = `${icon('expand')}<span>답글 더보기</span>`;
+
+  let loaded = false;
+  let nextToken = null;
+  const setToggle = (open) => {
+    toggle.innerHTML = `${icon(open ? 'collapse' : 'expand')}<span></span>`;
+    toggle.querySelector('span').textContent = open ? '답글 숨기기' : `답글 ${c.replyCount.toLocaleString('ko-KR')}개`;
+  };
+  setToggle(false);
+
+  const loadReplies = async () => {
+    more.hidden = true;
+    try {
+      const { replies, nextPageToken } = await fetchReplies(c.id, nextToken || undefined);
+      replies.forEach((r) => list.append(renderComment({ ...r, replyCount: 0 })));
+      nextToken = nextPageToken || null;
+      more.hidden = !nextToken;
+    } catch {
+      loaded = false; // 다음에 펼칠 때 다시 시도한다
+    }
+  };
+
+  toggle.addEventListener('click', async () => {
+    const open = list.hidden;
+    list.hidden = !open;
+    setToggle(open);
+    if (!open) {
+      more.hidden = true;
+      return;
+    }
+    if (!loaded) {
+      loaded = true;
+      await loadReplies();
+    } else {
+      more.hidden = !nextToken;
+    }
+  });
+  more.addEventListener('click', loadReplies);
+  return [toggle, list, more];
 }
 
 // ===== 시작 화면: 영상 불러오기 (재생목록 / 채널) =====

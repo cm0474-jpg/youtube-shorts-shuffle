@@ -21,6 +21,12 @@ let errorStreak = 0;     // 연속으로 재생에 실패한 횟수
 const frame = document.getElementById('frame');
 const touchLayer = document.getElementById('touchLayer');
 const soundBtn = document.getElementById('soundBtn');
+const soundIcon = document.getElementById('soundIcon');
+const soundLabel = document.getElementById('soundLabel');
+const progress = document.getElementById('progress');
+const progressFill = document.getElementById('progressFill');
+const progressThumb = document.getElementById('progressThumb');
+const progressTime = document.getElementById('progressTime');
 const shuffleBtn = document.getElementById('shuffleBtn');
 const centerIcon = document.getElementById('centerIcon');
 const ytShareHit = document.getElementById('ytShareHit');
@@ -58,6 +64,7 @@ function setVideos(ids) {
   resetQueue();
   if (player) loadCurrent();
   else createPlayer();
+  progress.hidden = false;
 }
 
 // ===== YouTube 플레이어 =====
@@ -127,6 +134,7 @@ function onPlayerError() {
 }
 
 function loadCurrent() {
+  setProgress(0);
   player.loadVideoById(queue[pos]);
   if (muted) player.mute();
   else player.unMute();
@@ -189,9 +197,72 @@ function toggleSound() {
 }
 
 function updateSoundBtn() {
-  soundBtn.textContent = muted ? '🔇' : '🔊';
+  setIcon(soundIcon, muted ? 'volumeOff' : 'volumeOn');
+  soundLabel.textContent = muted ? '음소거' : '소리';
   soundBtn.setAttribute('aria-label', muted ? '소리 켜기' : '소리 끄기');
 }
+
+// ===== 재생 진행 바 =====
+// 숏츠 앱처럼 화면 맨 아래의 얇은 바. 누르거나 끌면 굵어지면서 그 시간으로 옮기고, 끄는 동안 시간을 크게 보여준다.
+let scrubbing = false;
+let playingBeforeScrub = false;
+
+function setProgress(ratio) {
+  const percent = `${Math.min(Math.max(ratio, 0), 1) * 100}%`;
+  progressFill.style.width = percent;
+  progressThumb.style.left = percent;
+  progress.setAttribute('aria-valuenow', Math.round(ratio * 100));
+}
+
+function formatTime(sec) {
+  const s = Math.max(0, Math.floor(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+setInterval(() => {
+  if (!player?.getDuration || scrubbing) return;
+  const duration = player.getDuration();
+  if (duration) setProgress(player.getCurrentTime() / duration);
+}, 200);
+
+// commit: 손을 뗄 때만 실제로 그 위치부터 다시 받아온다 (끄는 중에는 화면만 미리 보여준다)
+function seekFromPointer(e, commit) {
+  const duration = player?.getDuration?.();
+  if (!duration) return;
+  const rect = progress.getBoundingClientRect();
+  const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+  setProgress(ratio);
+  progressTime.textContent = `${formatTime(ratio * duration)} / ${formatTime(duration)}`;
+  player.seekTo(ratio * duration, commit);
+}
+
+progress.addEventListener('pointerdown', (e) => {
+  if (!player) return;
+  scrubbing = true;
+  const state = player.getPlayerState();
+  playingBeforeScrub = state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING;
+  progress.classList.add('scrubbing');
+  progressTime.hidden = false;
+  progress.setPointerCapture(e.pointerId);
+  seekFromPointer(e, false);
+});
+
+progress.addEventListener('pointermove', (e) => {
+  if (scrubbing) seekFromPointer(e, false);
+});
+
+function endScrub(e) {
+  if (!scrubbing) return;
+  if (e.type === 'pointerup') seekFromPointer(e, true);
+  // 끄는 동안 위치를 옮기다 보면 플레이어가 멈춘 상태로 남을 때가 있어서, 재생 중이었다면 다시 재생한다
+  if (playingBeforeScrub) player.playVideo();
+  scrubbing = false;
+  progress.classList.remove('scrubbing');
+  progressTime.hidden = true;
+}
+
+progress.addEventListener('pointerup', endScrub);
+progress.addEventListener('pointercancel', endScrub);
 
 // ===== 멈춘 화면의 유튜브 버튼 자리 =====
 // 영상이 멈추면 유튜브가 영상 위에 자체 버튼(왼쪽 아래 공유, 오른쪽 아래 Shorts 로고)을 띄운다.

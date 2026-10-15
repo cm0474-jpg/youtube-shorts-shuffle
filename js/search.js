@@ -163,10 +163,6 @@ function renderSuggestions(list, { recent = false, query = '' } = {}) {
   sourceInput.setAttribute('aria-expanded', String(!suggestList.hidden));
 }
 
-const ICON_SEARCH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.47 6.47 0 0 0 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>';
-const ICON_HISTORY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8z"/></svg>';
-const ICON_FILL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17V9.41l9.29 9.3 1.42-1.42L8.41 8H16V6H5v11z"/></svg>';
-
 function suggestionItem(text, recent, query) {
   const li = document.createElement('li');
   li.className = 'suggest-row';
@@ -174,7 +170,7 @@ function suggestionItem(text, recent, query) {
   const pick = document.createElement('button');
   pick.type = 'button';
   pick.className = 'suggest-item';
-  pick.innerHTML = recent ? ICON_HISTORY : ICON_SEARCH;
+  pick.innerHTML = icon(recent ? 'history' : 'search');
   const label = document.createElement('span');
   // 유튜브처럼 입력한 부분 뒤에 이어지는 글자를 굵게 보여준다
   if (query && text.startsWith(query)) {
@@ -197,7 +193,7 @@ function suggestionItem(text, recent, query) {
     remove.type = 'button';
     remove.className = 'suggest-side';
     remove.setAttribute('aria-label', `${text} 검색 기록 삭제`);
-    remove.textContent = '✕';
+    remove.innerHTML = icon('close');
     remove.addEventListener('click', () => {
       removeRecent(text);
       renderSuggestions(readRecent(), { recent: true });
@@ -210,7 +206,7 @@ function suggestionItem(text, recent, query) {
     fill.type = 'button';
     fill.className = 'suggest-side';
     fill.setAttribute('aria-label', `${text} 검색창에 넣기`);
-    fill.innerHTML = ICON_FILL;
+    fill.innerHTML = icon('fill');
     fill.addEventListener('click', () => {
       sourceInput.value = `${text} `;
       sourceInput.focus();
