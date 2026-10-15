@@ -4,7 +4,9 @@
 // 하루 사용량(기본 10,000 units) 기준 비용: 아래 요청은 모두 1 unit 씩이다.
 
 const YT_API_BASE = 'https://www.googleapis.com/youtube/v3/';
-const MAX_SOURCE_VIDEOS = 200; // 재생목록/채널에서 불러올 최대 영상 수
+// 재생목록/채널의 영상을 전부 불러온다. 영상이 아주 많은 채널을 대비한 안전 상한
+// (50개당 1 unit 이므로 5,000개면 100 units)
+const MAX_SOURCE_VIDEOS = 5000;
 
 const hasApiKey = Boolean(YOUTUBE_API_KEY);
 

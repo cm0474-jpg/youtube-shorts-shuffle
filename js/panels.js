@@ -197,8 +197,9 @@ async function loadSource(text, { silent = false } = {}) {
   try {
     const { ids, label } = await fetchVideosFromSource(source);
     if (!ids.length) throw Object.assign(new Error('no videos'), { reason: 'empty' });
-    await fetchStats(ids).catch(() => {}); // 좋아요/댓글 수를 미리 받아 두면 넘길 때 바로 보인다
     setVideos(ids);
+    // 좋아요/댓글 수는 재생을 시작한 뒤 뒤에서 미리 받아 둔다 (영상이 많으면 몇 초 걸리므로 기다리지 않는다)
+    fetchStats(ids).catch(() => {});
     saveSource(text.trim());
     updateSourceCurrent(label, ids.length);
     setStatus(sourceStatus, '');
