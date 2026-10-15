@@ -25,16 +25,16 @@
 | 소리 켜기/끄기 | 🔇 버튼 | 🔇 버튼 / M 키 |
 | 다시 섞기 | 🔀 버튼 | 🔀 버튼 |
 | 댓글 보기 | 💬 버튼 | 💬 버튼 (Esc 로 닫기) |
-| 재생목록 / 채널 불러오기 | 📂 버튼 | 📂 버튼 |
+| 다른 채널 / 재생목록으로 바꾸기 | 📂 버튼 | 📂 버튼 |
 
 모바일 브라우저는 소리가 있는 자동재생을 막기 때문에 처음에는 음소거 상태로 재생됩니다.
 
-📂 버튼에는 재생목록 링크(`youtube.com/playlist?list=...`)나 채널 링크(`youtube.com/@채널이름`)를 넣습니다.
-채널 링크를 넣으면 그 채널의 숏츠만 불러오고, 마지막으로 불러온 링크는 다음에 열 때 자동으로 다시 불러옵니다.
+앱을 열면 시작 화면에서 채널 링크(`youtube.com/@채널이름`)나 재생목록 링크(`youtube.com/playlist?list=...`)를 넣습니다.
+채널 링크를 넣으면 그 채널의 숏츠를 전부 불러와서 섞어 재생합니다. 마지막으로 넣은 링크는 다음에 열 때 입력칸에 미리 채워집니다.
 
 ## YouTube Data API 키 설정
 
-👍 / 💬 / 📂 기능은 YouTube Data API 키가 있어야 보입니다. 키가 없으면 `js/videos.js`의 기본 목록만 재생합니다.
+영상 목록, 좋아요 수, 댓글을 YouTube Data API로 불러오므로 API 키가 필요합니다.
 
 1. [Google Cloud Console](https://console.cloud.google.com/)에서 프로젝트를 만들고 **YouTube Data API v3**를 사용 설정합니다.
 2. **사용자 인증 정보 → API 키**를 만들고 다음과 같이 제한합니다.
@@ -60,10 +60,9 @@ python3 -m http.server 8000
 index.html          화면 구조
 css/style.css       9:16 세로 레이아웃, 버튼, 아래에서 올라오는 창
 js/config.js        YouTube Data API 키
-js/videos.js        기본 숏츠 영상 ID 목록
 js/youtube-api.js   YouTube Data API 호출 (재생목록, 채널, 좋아요 수, 댓글)
 js/app.js           랜덤 순서, 스와이프, 플레이어 제어
-js/panels.js        좋아요/댓글 표시, 댓글 창, 영상 불러오기 창
+js/panels.js        시작 화면(링크 입력), 좋아요/댓글 표시, 댓글 창
 ```
 
 ## 기술 스택

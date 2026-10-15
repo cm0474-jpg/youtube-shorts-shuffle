@@ -18,7 +18,7 @@
     <div class="touch-layer" id="touchLayer"></div>
 
     <!-- 위/아래는 유튜브 숏츠 자체 UI(채널명, 제목, 좋아요)가 차지하므로 버튼은 오른쪽 가운데에 둔다 -->
-    <!-- 좋아요/댓글/불러오기 버튼은 API 키가 있을 때만 보인다 -->
+    <!-- 좋아요/댓글 버튼은 API 키가 있을 때만 보인다 -->
     <nav class="side-actions">
       <div class="action" id="likeAction" hidden>
         <span class="round-btn" aria-hidden="true">👍</span>
@@ -30,12 +30,12 @@
       </button>
       <button class="round-btn" id="soundBtn" type="button" aria-label="소리 켜기">🔇</button>
       <button class="round-btn" id="shuffleBtn" type="button" aria-label="다시 섞기">🔀</button>
-      <button class="round-btn" id="sourceBtn" type="button" aria-label="영상 불러오기" hidden>📂</button>
+      <button class="round-btn" id="sourceBtn" type="button" aria-label="다른 채널/재생목록 불러오기">📂</button>
     </nav>
 
     <div class="center-icon" id="centerIcon" aria-hidden="true"></div>
 
-    <div class="hint" id="hint">↑ 위로 스와이프해서 다음 영상</div>
+    <div class="hint hidden" id="hint">↑ 위로 스와이프해서 다음 영상</div>
     <!-- 아래에서 올라오는 창 -->
     <div class="sheet-backdrop" id="sheetBackdrop"></div>
 
@@ -51,13 +51,12 @@
       </div>
     </section>
 
-    <section class="sheet sheet-compact" id="sourceSheet" aria-hidden="true" aria-labelledby="sourceTitle">
-      <header class="sheet-header">
-        <h2 id="sourceTitle">영상 불러오기</h2>
-        <button class="sheet-close" type="button" data-close aria-label="닫기">✕</button>
-      </header>
-      <div class="sheet-body">
-        <p class="source-current" id="sourceCurrent"></p>
+    <!-- 시작 화면: 처음 열면 링크를 넣는 화면이 나오고, 재생 중에는 📂 로 다시 연다 -->
+    <section class="start-screen" id="startScreen" aria-labelledby="startTitle">
+      <div class="start-inner">
+        <button class="start-back" id="startBack" type="button" hidden>← 재생 화면으로 돌아가기</button>
+        <h1 id="startTitle">Shorts Shuffle</h1>
+        <p class="start-desc">유튜브 채널의 숏츠나 재생목록을 랜덤으로 재생해요</p>
         <form class="source-form" id="sourceForm">
           <input id="sourceInput" type="text" inputmode="url" autocomplete="off" spellcheck="false"
                  placeholder="재생목록 또는 채널 링크 붙여넣기" aria-label="재생목록 또는 채널 링크">
@@ -65,10 +64,10 @@
         </form>
         <p class="sheet-status" id="sourceStatus" role="status"></p>
         <ul class="source-help">
-          <li>재생목록: youtube.com/playlist?list=…</li>
           <li>채널: youtube.com/@채널이름 (채널의 숏츠만 불러와요)</li>
+          <li>재생목록: youtube.com/playlist?list=…</li>
         </ul>
-        <button class="sheet-btn" id="sourceReset" type="button">기본 목록으로 되돌리기</button>
+        <p class="source-current" id="sourceCurrent"></p>
       </div>
     </section>
 
@@ -76,7 +75,6 @@
   </main>
 
   <script src="js/config.js"></script>
-  <script src="js/videos.js"></script>
   <script src="js/youtube-api.js"></script>
   <script src="js/app.js"></script>
   <script src="js/panels.js"></script>

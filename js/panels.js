@@ -1,7 +1,6 @@
 'use strict';
 
-// 오른쪽 버튼(좋아요 수, 댓글, 영상 불러오기)과 아래에서 올라오는 창(댓글, 영상 불러오기)
-// YouTube Data API 키가 있을 때만 보인다.
+// 시작 화면(채널/재생목록 링크 입력), 오른쪽 버튼(좋아요 수, 댓글), 아래에서 올라오는 댓글 창
 
 const SOURCE_STORAGE_KEY = 'shorts-shuffle:source';
 
@@ -19,13 +18,13 @@ const commentsList = document.getElementById('commentsList');
 const commentsStatus = document.getElementById('commentsStatus');
 const commentsMore = document.getElementById('commentsMore');
 
-const sourceSheet = document.getElementById('sourceSheet');
+const startScreen = document.getElementById('startScreen');
+const startBack = document.getElementById('startBack');
 const sourceCurrent = document.getElementById('sourceCurrent');
 const sourceForm = document.getElementById('sourceForm');
 const sourceInput = document.getElementById('sourceInput');
 const sourceSubmit = document.getElementById('sourceSubmit');
 const sourceStatus = document.getElementById('sourceStatus');
-const sourceReset = document.getElementById('sourceReset');
 
 let currentVideoId = null;
 let openedSheet = null;
@@ -33,7 +32,6 @@ let openedSheet = null;
 if (hasApiKey) {
   likeAction.hidden = false;
   commentBtn.hidden = false;
-  sourceBtn.hidden = false;
 }
 
 // ===== 좋아요 수 / 댓글 수 =====
@@ -75,14 +73,17 @@ function closeSheet() {
   sourceInput.blur(); // 모바일 키보드 닫기
 }
 
-function isSheetOpen() {
-  return openedSheet !== null;
+// 댓글 창이나 시작 화면이 영상을 가리고 있는지 (app.js 에서 스와이프/키보드 조작을 막을 때 쓴다)
+function isOverlayOpen() {
+  return openedSheet !== null || !startScreen.hidden;
 }
 
 sheetBackdrop.addEventListener('click', closeSheet);
 document.querySelectorAll('[data-close]').forEach((btn) => btn.addEventListener('click', closeSheet));
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeSheet();
+  if (e.key !== 'Escape') return;
+  if (openedSheet) closeSheet();
+  else if (!startScreen.hidden && videoIds.length) hideStartScreen();
 });
 
 function setStatus(el, message) {
@@ -166,26 +167,31 @@ function renderComment(c) {
   return li;
 }
 
-// ===== 영상 불러오기 (재생목록 / 채널) =====
-sourceBtn.addEventListener('click', () => openSheet(sourceSheet));
+// ===== 시작 화면: 영상 불러오기 (재생목록 / 채널) =====
+sourceBtn.addEventListener('click', showStartScreen);
+startBack.addEventListener('click', hideStartScreen);
 
 sourceForm.addEventListener('submit', (e) => {
   e.preventDefault();
   loadSource(sourceInput.value);
 });
 
-sourceReset.addEventListener('click', () => {
-  setVideos(VIDEO_IDS);
-  saveSource(null);
-  sourceInput.value = '';
-  setStatus(sourceStatus, '');
-  updateSourceCurrent('기본 목록', VIDEO_IDS.length);
+// 재생 중에 📂 를 누르면 시작 화면으로 돌아와서 다른 채널/재생목록으로 바꿀 수 있다
+function showStartScreen() {
   closeSheet();
-  showToast('기본 목록으로 되돌렸어요');
-});
+  startScreen.hidden = false;
+  startBack.hidden = !videoIds.length;
+  setStatus(sourceStatus, '');
+  if (player) player.pauseVideo();
+}
 
-// silent: 앱을 열 때 저장된 목록을 자동으로 불러오는 경우 (실패해도 기본 목록을 계속 재생한다)
-async function loadSource(text, { silent = false } = {}) {
+function hideStartScreen() {
+  startScreen.hidden = true;
+  sourceInput.blur();
+  if (player) player.playVideo();
+}
+
+async function loadSource(text) {
   const source = parseSource(text);
   if (!source) {
     setStatus(sourceStatus, '재생목록 링크나 채널 링크를 입력해 주세요');
@@ -195,19 +201,20 @@ async function loadSource(text, { silent = false } = {}) {
   sourceSubmit.disabled = true;
   setStatus(sourceStatus, '불러오는 중...');
   try {
-    const { ids, label } = await fetchVideosFromSource(source);
+    const { ids, label } = await fetchVideosFromSource(source, (count) => {
+      setStatus(sourceStatus, `불러오는 중... (${count}개)`);
+    });
     if (!ids.length) throw Object.assign(new Error('no videos'), { reason: 'empty' });
+    startScreen.hidden = true;
     setVideos(ids);
     // 좋아요/댓글 수는 재생을 시작한 뒤 뒤에서 미리 받아 둔다 (영상이 많으면 몇 초 걸리므로 기다리지 않는다)
     fetchStats(ids).catch(() => {});
     saveSource(text.trim());
     updateSourceCurrent(label, ids.length);
     setStatus(sourceStatus, '');
-    closeSheet();
     showToast(`${label} ${ids.length}개를 섞어서 재생해요`);
   } catch (err) {
     setStatus(sourceStatus, apiErrorMessage(err));
-    if (silent) showToast('저장된 목록을 불러오지 못해 기본 목록을 재생해요');
   } finally {
     sourceSubmit.disabled = false;
   }
@@ -217,7 +224,7 @@ function updateSourceCurrent(label, count) {
   sourceCurrent.textContent = `지금 재생 중: ${label} (${count}개)`;
 }
 
-// 마지막으로 불러온 링크는 이 브라우저에만 저장해 두고 다음에 열 때 다시 불러온다
+// 마지막으로 불러온 링크는 이 브라우저에만 저장해 두고, 다음에 열 때 입력칸에 미리 채워 둔다
 function saveSource(text) {
   try {
     if (text) localStorage.setItem(SOURCE_STORAGE_KEY, text);
@@ -235,15 +242,10 @@ function readSavedSource() {
   }
 }
 
-// app.js 에서 플레이어가 준비되면 호출한다
-function restoreSavedSource() {
-  if (!hasApiKey) return;
-  updateSourceCurrent('기본 목록', VIDEO_IDS.length);
-  const saved = readSavedSource();
-  if (saved) {
-    sourceInput.value = saved;
-    loadSource(saved, { silent: true });
-  } else {
-    fetchStats(videoIds).then(() => updateVideoInfo(currentVideoId)).catch(() => {});
-  }
+// ===== 처음 열었을 때 =====
+if (hasApiKey) {
+  sourceInput.value = readSavedSource() || '';
+} else {
+  sourceSubmit.disabled = true;
+  setStatus(sourceStatus, 'YouTube Data API 키가 설정되지 않았어요 (js/config.js)');
 }

@@ -8,10 +8,11 @@ const TAP_MAX_TIME = 300;    // ms
 const SLIDE_MS = 250;        // style.css 의 --slide-duration 과 맞춘다
 
 // ===== 상태 =====
-let videoIds = VIDEO_IDS.slice(); // 현재 재생 대상 (기본 목록 또는 불러온 재생목록/채널)
+let videoIds = [];       // 재생 대상 (시작 화면에서 불러온 채널/재생목록의 영상)
 let queue = [];          // 재생 순서 (섞은 묶음을 계속 이어 붙인다)
 let pos = 0;             // queue 에서 현재 재생 중인 위치
-let player = null;
+let player = null;       // 첫 목록을 불러온 뒤에 만든다
+let ytReady = false;     // YouTube IFrame API 스크립트 로드 완료 여부
 let muted = true;        // 모바일 자동재생은 음소거 상태에서만 허용된다
 let animating = false;
 let errorStreak = 0;     // 연속으로 재생에 실패한 횟수
@@ -50,20 +51,25 @@ function resetQueue() {
   extendQueue();
 }
 
-// 재생 대상을 새 목록으로 바꾸고 첫 영상부터 다시 섞어서 재생한다
+// 재생 대상을 새 목록으로 바꾸고 섞어서 처음부터 재생한다
 function setVideos(ids) {
   videoIds = ids.slice();
   errorStreak = 0;
   resetQueue();
-  if (player) {
-    loadCurrent();
-    slide(1);
-  }
+  if (player) loadCurrent();
+  else createPlayer();
+  showHint();
 }
 
 // ===== YouTube 플레이어 =====
 window.onYouTubeIframeAPIReady = function () {
-  resetQueue();
+  ytReady = true;
+  // API 스크립트보다 목록을 먼저 불러온 경우 여기서 플레이어를 만든다
+  if (videoIds.length && !player) createPlayer();
+};
+
+function createPlayer() {
+  if (!ytReady) return;
   player = new YT.Player('player', {
     width: '100%',
     height: '100%',
@@ -84,22 +90,21 @@ window.onYouTubeIframeAPIReady = function () {
       onError: onPlayerError,
     },
   });
-};
+}
 
 function onPlayerReady() {
   player.mute();
   player.playVideo();
   updateSoundBtn();
   updateVideoInfo(queue[pos]);
-  restoreSavedSource();
 }
 
 function onPlayerStateChange(e) {
   if (e.data === YT.PlayerState.PLAYING) {
     errorStreak = 0;
   } else if (e.data === YT.PlayerState.ENDED) {
-    // 댓글/불러오기 창을 보는 중에는 다음 영상으로 넘기지 않고 처음부터 반복한다
-    if (isSheetOpen()) {
+    // 댓글 창이나 시작 화면을 보는 중에는 다음 영상으로 넘기지 않고 처음부터 반복한다
+    if (isOverlayOpen()) {
       player.seekTo(0);
       player.playVideo();
     } else {
@@ -240,8 +245,8 @@ touchLayer.addEventListener('pointercancel', () => {
 
 // ===== PC 테스트용: 키보드 / 마우스 휠 =====
 document.addEventListener('keydown', (e) => {
-  // 입력창에 타이핑 중이거나 아래 창(댓글/불러오기)이 열려 있으면 영상 조작을 하지 않는다
-  if (e.target.matches('input, textarea') || isSheetOpen()) return;
+  // 입력창에 타이핑 중이거나 댓글 창/시작 화면이 열려 있으면 영상 조작을 하지 않는다
+  if (e.target.matches('input, textarea') || isOverlayOpen()) return;
   if (e.key === 'ArrowDown' || e.key === 'ArrowRight') go(1);
   else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') go(-1);
   else if (e.key === ' ') { e.preventDefault(); togglePlay(); }
@@ -269,10 +274,17 @@ shuffleBtn.addEventListener('click', () => {
 });
 
 // ===== 안내 UI =====
+let hintShown = false;
+function showHint() {
+  if (hintShown) return; // 처음 재생할 때 한 번만 보여준다
+  hintShown = true;
+  hint.classList.remove('hidden');
+  setTimeout(hideHint, 5000);
+}
+
 function hideHint() {
   hint.classList.add('hidden');
 }
-setTimeout(hideHint, 5000);
 
 function flashIcon(symbol) {
   centerIcon.textContent = symbol;

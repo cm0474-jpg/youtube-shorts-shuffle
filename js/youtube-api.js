@@ -71,7 +71,8 @@ function parseSource(text) {
 }
 
 // ===== 영상 목록 =====
-async function fetchPlaylistVideoIds(playlistId) {
+// onProgress(지금까지 불러온 개수): 영상이 많으면 몇 초 걸리므로 진행 상황을 알린다
+async function fetchPlaylistVideoIds(playlistId, onProgress) {
   const ids = [];
   let pageToken;
   do {
@@ -88,6 +89,7 @@ async function fetchPlaylistVideoIds(playlistId) {
       ids.push(item.contentDetails.videoId);
     }
     pageToken = data.nextPageToken;
+    onProgress?.(ids.length);
   } while (pageToken && ids.length < MAX_SOURCE_VIDEOS);
   return [...new Set(ids)].slice(0, MAX_SOURCE_VIDEOS);
 }
@@ -95,7 +97,7 @@ async function fetchPlaylistVideoIds(playlistId) {
 // 채널의 숏츠 목록을 가져온다.
 // 채널의 업로드 재생목록 ID는 UU...로 시작하고, 앞부분을 UUSH로 바꾸면 숏츠만 모인 재생목록이 된다.
 // (공식 문서에는 없는 방식이라, 실패하면 전체 업로드 영상으로 대신한다)
-async function fetchChannelVideoIds(source) {
+async function fetchChannelVideoIds(source, onProgress) {
   const params = { part: 'contentDetails,snippet' };
   if (source.type === 'handle') params.forHandle = source.id;
   else params.id = source.id;
@@ -111,19 +113,19 @@ async function fetchChannelVideoIds(source) {
   const name = channel.snippet.title;
 
   try {
-    const shorts = await fetchPlaylistVideoIds(`UUSH${uploads.slice(2)}`);
+    const shorts = await fetchPlaylistVideoIds(`UUSH${uploads.slice(2)}`, onProgress);
     if (shorts.length) return { ids: shorts, label: `${name}의 숏츠` };
   } catch {
     // 숏츠 재생목록이 없으면 아래에서 전체 업로드로 대신한다
   }
-  return { ids: await fetchPlaylistVideoIds(uploads), label: `${name}의 전체 영상` };
+  return { ids: await fetchPlaylistVideoIds(uploads, onProgress), label: `${name}의 전체 영상` };
 }
 
-async function fetchVideosFromSource(source) {
+async function fetchVideosFromSource(source, onProgress) {
   if (source.type === 'playlist') {
-    return { ids: await fetchPlaylistVideoIds(source.id), label: '재생목록' };
+    return { ids: await fetchPlaylistVideoIds(source.id, onProgress), label: '재생목록' };
   }
-  return fetchChannelVideoIds(source);
+  return fetchChannelVideoIds(source, onProgress);
 }
 
 // ===== 좋아요 수 / 댓글 수 =====
