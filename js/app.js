@@ -99,6 +99,7 @@ function onPlayerReady() {
 function onPlayerStateChange(e) {
   if (e.data === YT.PlayerState.PLAYING) {
     errorStreak = 0;
+    applyCaptionPreference(queue[pos]);
   } else if (e.data === YT.PlayerState.ENDED) {
     // 댓글 창이나 시작 화면을 보는 중에는 다음 영상으로 넘기지 않고 처음부터 반복한다
     if (isOverlayOpen()) {

@@ -146,6 +146,37 @@ async function fetchStats(ids) {
   }
 }
 
+// ===== 영상 설명 (⋮ 메뉴 → 설명) =====
+const detailsCache = new Map(); // videoId -> 제목, 채널, 조회수, 날짜, 설명글
+const channelAvatarCache = new Map(); // channelId -> 프로필 사진 주소
+
+async function fetchVideoDetails(videoId) {
+  if (detailsCache.has(videoId)) return detailsCache.get(videoId);
+  const data = await ytGet('videos', { part: 'snippet,statistics', id: videoId });
+  const item = data.items?.[0];
+  if (!item) throw Object.assign(new Error('video not found'), { reason: 'videoNotFound' });
+  const s = item.statistics || {};
+  const details = {
+    title: item.snippet.title,
+    channelId: item.snippet.channelId,
+    channelTitle: item.snippet.channelTitle,
+    publishedAt: item.snippet.publishedAt,
+    description: item.snippet.description,
+    viewCount: s.viewCount !== undefined ? Number(s.viewCount) : null,
+    likeCount: s.likeCount !== undefined ? Number(s.likeCount) : null,
+  };
+  detailsCache.set(videoId, details);
+  return details;
+}
+
+async function fetchChannelAvatar(channelId) {
+  if (channelAvatarCache.has(channelId)) return channelAvatarCache.get(channelId);
+  const data = await ytGet('channels', { part: 'snippet', id: channelId });
+  const url = data.items?.[0]?.snippet?.thumbnails?.default?.url || '';
+  channelAvatarCache.set(channelId, url);
+  return url;
+}
+
 // ===== 댓글 =====
 async function fetchComments(videoId, pageToken) {
   const data = await ytGet('commentThreads', {

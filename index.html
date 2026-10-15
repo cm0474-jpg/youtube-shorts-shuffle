@@ -33,6 +33,11 @@
       <button class="round-btn" id="sourceBtn" type="button" aria-label="다른 채널/재생목록 불러오기">📂</button>
     </nav>
 
+    <!-- 오른쪽 위 ⋮ 메뉴 (설명, 자막, 화질) -->
+    <button class="more-btn" id="moreBtn" type="button" aria-label="더보기">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+    </button>
+
     <div class="center-icon" id="centerIcon" aria-hidden="true"></div>
 
     <!-- 아래에서 올라오는 창 -->
@@ -47,6 +52,79 @@
         <ul class="comment-list" id="commentsList"></ul>
         <p class="sheet-status" id="commentsStatus"></p>
         <button class="sheet-btn" id="commentsMore" type="button" hidden>댓글 더 보기</button>
+      </div>
+    </section>
+
+    <section class="sheet sheet-compact" id="menuSheet" aria-hidden="true" aria-label="더보기 메뉴">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <ul class="menu-list">
+        <li>
+          <button class="menu-item" id="menuDesc" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>
+            <span>설명</span>
+          </button>
+        </li>
+        <li>
+          <button class="menu-item" id="menuCaptions" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 14H5V6h14zM7 15h3a1 1 0 0 0 1-1v-1H9.5v.5h-2v-3h2v.5H11v-1a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1zm7 0h3a1 1 0 0 0 1-1v-1h-1.5v.5h-2v-3h2v.5H18v-1a1 1 0 0 0-1-1h-3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1z"/></svg>
+            <span>자막</span>
+            <span class="menu-value" id="menuCaptionsValue">사용 안함</span>
+          </button>
+        </li>
+        <li>
+          <button class="menu-item" id="menuQuality" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17v2h6v-2zM3 5v2h10V5zm10 16v-2h8v-2h-8v-2h-2v6zM7 9v2H3v2h4v2h2V9zm14 4v-2H11v2zm-6-4h2V7h4V5h-4V3h-2z"/></svg>
+            <span>화질</span>
+            <span class="menu-value" id="menuQualityValue">자동</span>
+          </button>
+        </li>
+      </ul>
+    </section>
+
+    <section class="sheet" id="descSheet" aria-hidden="true" aria-labelledby="descHeading">
+      <header class="sheet-header">
+        <h2 id="descHeading">설명</h2>
+        <button class="sheet-close" type="button" data-close aria-label="닫기">✕</button>
+      </header>
+      <div class="sheet-body">
+        <p class="sheet-status" id="descStatus"></p>
+        <div id="descContent" hidden>
+          <h3 class="desc-title" id="descTitle"></h3>
+          <div class="desc-channel">
+            <img class="avatar" id="descAvatar" alt="" referrerpolicy="no-referrer">
+            <span id="descChannel"></span>
+          </div>
+          <dl class="desc-stats">
+            <div><dt id="descLikes"></dt><dd>좋아요</dd></div>
+            <div><dt id="descViews"></dt><dd>조회수</dd></div>
+            <div><dt id="descDate"></dt><dd id="descYear"></dd></div>
+          </dl>
+          <p class="desc-text" id="descText"></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sheet sheet-compact" id="captionSheet" aria-hidden="true" aria-labelledby="captionHeading">
+      <header class="sheet-header">
+        <h2 id="captionHeading">자막</h2>
+        <button class="sheet-close" type="button" data-close aria-label="닫기">✕</button>
+      </header>
+      <div class="sheet-body">
+        <ul class="option-list" id="captionList"></ul>
+        <p class="sheet-status" id="captionStatus"></p>
+      </div>
+    </section>
+
+    <section class="sheet sheet-compact" id="qualitySheet" aria-hidden="true" aria-labelledby="qualityHeading">
+      <header class="sheet-header">
+        <h2 id="qualityHeading">화질</h2>
+        <button class="sheet-close" type="button" data-close aria-label="닫기">✕</button>
+      </header>
+      <div class="sheet-body">
+        <ul class="option-list">
+          <li><button class="option-item selected" type="button" disabled><span id="qualityCurrent">자동</span></button></li>
+        </ul>
+        <p class="sheet-note">유튜브 정책상 외부 앱에서는 화질을 직접 고를 수 없어서, 네트워크 상태에 맞춰 자동으로 정해져요.</p>
       </div>
     </section>
 
@@ -76,6 +154,7 @@
   <script src="js/youtube-api.js"></script>
   <script src="js/app.js"></script>
   <script src="js/panels.js"></script>
+  <script src="js/menu.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
