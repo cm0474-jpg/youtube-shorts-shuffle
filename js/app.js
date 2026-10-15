@@ -23,8 +23,6 @@ const touchLayer = document.getElementById('touchLayer');
 const soundBtn = document.getElementById('soundBtn');
 const shuffleBtn = document.getElementById('shuffleBtn');
 const centerIcon = document.getElementById('centerIcon');
-const hint = document.getElementById('hint');
-const toast = document.getElementById('toast');
 
 // ===== 재생 순서 =====
 function shuffle(arr) {
@@ -58,7 +56,6 @@ function setVideos(ids) {
   resetQueue();
   if (player) loadCurrent();
   else createPlayer();
-  showHint();
 }
 
 // ===== YouTube 플레이어 =====
@@ -116,10 +113,11 @@ function onPlayerStateChange(e) {
 function onPlayerError() {
   errorStreak++;
   if (errorStreak >= videoIds.length) {
-    showToast('재생할 수 있는 영상이 없어요');
+    // 목록 전체가 재생되지 않으면 시작 화면으로 돌아가서 다른 링크를 넣게 한다
+    showStartScreen('이 목록에는 재생할 수 있는 영상이 없어요');
     return;
   }
-  showToast('재생할 수 없는 영상이라 건너뛰었어요');
+  // 재생할 수 없는 영상(퍼가기 금지 등)은 조용히 건너뛴다.
   // 넘기는 애니메이션 중에 에러가 나면 go()가 무시되므로 애니메이션이 끝난 뒤 넘긴다
   setTimeout(() => go(1), animating ? SLIDE_MS * 2 : 0);
 }
@@ -136,8 +134,7 @@ function loadCurrent() {
 function go(dir) {
   if (!player || animating) return;
   if (dir < 0 && pos === 0) {
-    snapBack();
-    showToast('첫 번째 영상이에요');
+    snapBack(); // 첫 영상에서 아래로 밀면 제자리로 튕겨 돌아온다
     return;
   }
   pos += dir;
@@ -145,7 +142,6 @@ function go(dir) {
   // 터치 이벤트 안에서 바로 불러와야 모바일 브라우저가 재생을 허용한다
   loadCurrent();
   slide(dir);
-  hideHint();
 }
 
 // 현재 화면을 밀어내고 반대편에서 새 화면이 들어오는 애니메이션
@@ -186,7 +182,6 @@ function toggleSound() {
   if (muted) player.mute();
   else player.unMute();
   updateSoundBtn();
-  showToast(muted ? '소리를 껐어요' : '소리를 켰어요');
 }
 
 function updateSoundBtn() {
@@ -270,33 +265,12 @@ shuffleBtn.addEventListener('click', () => {
   resetQueue();
   loadCurrent();
   slide(1);
-  showToast('새로 섞었어요');
 });
 
-// ===== 안내 UI =====
-let hintShown = false;
-function showHint() {
-  if (hintShown) return; // 처음 재생할 때 한 번만 보여준다
-  hintShown = true;
-  hint.classList.remove('hidden');
-  setTimeout(hideHint, 5000);
-}
-
-function hideHint() {
-  hint.classList.add('hidden');
-}
-
+// ===== 재생/일시정지 아이콘 =====
 function flashIcon(symbol) {
   centerIcon.textContent = symbol;
   centerIcon.classList.remove('show');
   void centerIcon.offsetWidth; // 애니메이션을 처음부터 다시 재생
   centerIcon.classList.add('show');
-}
-
-let toastTimer = null;
-function showToast(message) {
-  toast.textContent = message;
-  toast.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
 }

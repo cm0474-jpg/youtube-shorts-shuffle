@@ -168,7 +168,7 @@ function renderComment(c) {
 }
 
 // ===== 시작 화면: 영상 불러오기 (재생목록 / 채널) =====
-sourceBtn.addEventListener('click', showStartScreen);
+sourceBtn.addEventListener('click', () => showStartScreen());
 startBack.addEventListener('click', hideStartScreen);
 
 sourceForm.addEventListener('submit', (e) => {
@@ -177,11 +177,12 @@ sourceForm.addEventListener('submit', (e) => {
 });
 
 // 재생 중에 📂 를 누르면 시작 화면으로 돌아와서 다른 채널/재생목록으로 바꿀 수 있다
-function showStartScreen() {
+// message: 시작 화면에 띄울 안내 (예: 목록 전체가 재생되지 않을 때)
+function showStartScreen(message = '') {
   closeSheet();
   startScreen.hidden = false;
-  startBack.hidden = !videoIds.length;
-  setStatus(sourceStatus, '');
+  startBack.hidden = !videoIds.length || Boolean(message);
+  setStatus(sourceStatus, message);
   if (player) player.pauseVideo();
 }
 
@@ -212,7 +213,6 @@ async function loadSource(text) {
     saveSource(text.trim());
     updateSourceCurrent(label, ids.length);
     setStatus(sourceStatus, '');
-    showToast(`${label} ${ids.length}개를 섞어서 재생해요`);
   } catch (err) {
     setStatus(sourceStatus, apiErrorMessage(err));
   } finally {
