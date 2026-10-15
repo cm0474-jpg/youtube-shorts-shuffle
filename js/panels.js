@@ -1,8 +1,6 @@
 'use strict';
 
-// 시작 화면(채널/재생목록 링크 입력), 오른쪽 버튼(좋아요 수, 댓글), 아래에서 올라오는 댓글 창
-
-const SOURCE_STORAGE_KEY = 'shorts-shuffle:source';
+// 시작 화면(채널/재생목록 불러오기), 오른쪽 버튼(좋아요 수, 댓글), 아래에서 올라오는 댓글 창
 
 // ===== DOM =====
 const likeAction = document.getElementById('likeAction');
@@ -21,7 +19,6 @@ const commentsMore = document.getElementById('commentsMore');
 const startScreen = document.getElementById('startScreen');
 const startBack = document.getElementById('startBack');
 const sourceCurrent = document.getElementById('sourceCurrent');
-const sourceForm = document.getElementById('sourceForm');
 const sourceInput = document.getElementById('sourceInput');
 const sourceSubmit = document.getElementById('sourceSubmit');
 const sourceStatus = document.getElementById('sourceStatus');
@@ -168,13 +165,9 @@ function renderComment(c) {
 }
 
 // ===== 시작 화면: 영상 불러오기 (재생목록 / 채널) =====
+// 검색창, 자동완성, 검색 결과는 search.js 에서 다룬다
 sourceBtn.addEventListener('click', () => showStartScreen());
 startBack.addEventListener('click', hideStartScreen);
-
-sourceForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  loadSource(sourceInput.value);
-});
 
 // 재생 중에 📂 를 누르면 시작 화면으로 돌아와서 다른 채널/재생목록으로 바꿀 수 있다
 // message: 시작 화면에 띄울 안내 (예: 목록 전체가 재생되지 않을 때)
@@ -192,13 +185,12 @@ function hideStartScreen() {
   if (player) player.playVideo();
 }
 
-async function loadSource(text) {
-  const source = parseSource(text);
-  if (!source) {
-    setStatus(sourceStatus, '재생목록 링크나 채널 링크를 입력해 주세요');
-    return;
-  }
+let loadingSource = false;
 
+// source: parseSource() 결과 또는 검색 결과에서 고른 채널 ({ type: 'channel', id })
+async function loadSource(source) {
+  if (loadingSource) return;
+  loadingSource = true;
   sourceSubmit.disabled = true;
   setStatus(sourceStatus, '불러오는 중...');
   try {
@@ -210,12 +202,12 @@ async function loadSource(text) {
     setVideos(ids);
     // 좋아요/댓글 수는 재생을 시작한 뒤 뒤에서 미리 받아 둔다 (영상이 많으면 몇 초 걸리므로 기다리지 않는다)
     fetchStats(ids).catch(() => {});
-    saveSource(text.trim());
     updateSourceCurrent(label, ids.length);
     setStatus(sourceStatus, '');
   } catch (err) {
     setStatus(sourceStatus, apiErrorMessage(err));
   } finally {
+    loadingSource = false;
     sourceSubmit.disabled = false;
   }
 }
@@ -224,28 +216,8 @@ function updateSourceCurrent(label, count) {
   sourceCurrent.textContent = `지금 재생 중: ${label} (${count}개)`;
 }
 
-// 마지막으로 불러온 링크는 이 브라우저에만 저장해 두고, 다음에 열 때 입력칸에 미리 채워 둔다
-function saveSource(text) {
-  try {
-    if (text) localStorage.setItem(SOURCE_STORAGE_KEY, text);
-    else localStorage.removeItem(SOURCE_STORAGE_KEY);
-  } catch {
-    // 시크릿 모드 등에서 저장이 막혀도 앱은 그대로 동작한다
-  }
-}
-
-function readSavedSource() {
-  try {
-    return localStorage.getItem(SOURCE_STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
 // ===== 처음 열었을 때 =====
-if (hasApiKey) {
-  sourceInput.value = readSavedSource() || '';
-} else {
+if (!hasApiKey) {
   sourceSubmit.disabled = true;
   setStatus(sourceStatus, 'YouTube Data API 키가 설정되지 않았어요 (js/config.js)');
 }

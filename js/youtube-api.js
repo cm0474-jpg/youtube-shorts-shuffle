@@ -128,6 +128,33 @@ async function fetchVideosFromSource(source, onProgress) {
   return fetchChannelVideoIds(source, onProgress);
 }
 
+// ===== 채널 검색 =====
+// search.list 는 한 번에 100 units 로 비싸다 (하루 10,000 units). 그래서 search.js 에서
+// 검색 버튼을 눌렀을 때만 부르고, 같은 검색어의 결과는 하루 동안 저장해 두고 다시 쓴다.
+async function searchChannels(query) {
+  const data = await ytGet('search', {
+    part: 'snippet',
+    type: 'channel',
+    q: query,
+    maxResults: 10,
+    regionCode: 'KR',
+    relevanceLanguage: 'ko',
+  });
+  const ids = (data.items || []).map((item) => item.id.channelId).filter(Boolean);
+  if (!ids.length) return [];
+
+  // 구독자 수와 @핸들은 search 결과에 없어서 channels.list 로 한 번에 받는다 (1 unit)
+  const channels = await ytGet('channels', { part: 'snippet,statistics', id: ids.join(','), maxResults: 50 });
+  const byId = new Map((channels.items || []).map((c) => [c.id, c]));
+  return ids.map((id) => byId.get(id)).filter(Boolean).map((c) => ({
+    id: c.id,
+    title: c.snippet.title,
+    handle: c.snippet.customUrl || '',
+    avatar: c.snippet.thumbnails?.default?.url || '',
+    subscriberCount: c.statistics?.hiddenSubscriberCount ? null : Number(c.statistics?.subscriberCount ?? NaN),
+  }));
+}
+
 // ===== 좋아요 수 / 댓글 수 =====
 const statsCache = new Map(); // videoId -> { likeCount, commentCount } (값이 숨겨진 영상은 null)
 

@@ -127,21 +127,33 @@
       </div>
     </section>
 
-    <!-- 시작 화면: 처음 열면 링크를 넣는 화면이 나오고, 재생 중에는 📂 로 다시 연다 -->
+    <!-- 시작 화면: 처음 열면 채널을 검색하거나 링크를 넣는 화면이 나오고, 재생 중에는 📂 로 다시 연다 -->
     <section class="start-screen" id="startScreen" aria-labelledby="startTitle">
       <div class="start-inner">
         <button class="start-back" id="startBack" type="button" hidden>← 재생 화면으로 돌아가기</button>
         <h1 id="startTitle">Shorts Shuffle</h1>
         <p class="start-desc">유튜브 채널의 숏츠나 재생목록을 랜덤으로 재생해요</p>
-        <form class="source-form" id="sourceForm">
-          <input id="sourceInput" type="text" inputmode="url" autocomplete="off" spellcheck="false"
-                 placeholder="재생목록 또는 채널 링크 붙여넣기" aria-label="재생목록 또는 채널 링크">
-          <button id="sourceSubmit" type="submit">불러오기</button>
+        <form class="search-bar" id="sourceForm" role="search">
+          <div class="search-field">
+            <input id="sourceInput" type="text" enterkeyhint="search" autocomplete="off" spellcheck="false"
+                   placeholder="채널 검색 또는 링크 붙여넣기" aria-label="채널 검색 또는 링크"
+                   role="combobox" aria-autocomplete="list" aria-controls="suggestList" aria-expanded="false">
+            <button class="search-clear" id="searchClear" type="button" aria-label="검색어 지우기" hidden>✕</button>
+          </div>
+          <button class="search-submit" id="sourceSubmit" type="submit" aria-label="검색">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.47 6.47 0 0 0 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          </button>
         </form>
+        <ul class="suggest-list" id="suggestList" role="listbox" hidden></ul>
         <p class="sheet-status" id="sourceStatus" role="status"></p>
-        <ul class="source-help">
-          <li>채널: youtube.com/@채널이름 (채널의 숏츠만 불러와요)</li>
-          <li>재생목록: youtube.com/playlist?list=…</li>
+        <p class="search-correction" id="searchCorrection" hidden>
+          다음 검색결과 표시: <b id="correctedQuery"></b><br>
+          원래 검색어: <button type="button" id="searchOriginal"></button>
+        </p>
+        <ul class="channel-results" id="channelResults"></ul>
+        <ul class="source-help" id="sourceHelp">
+          <li>채널 이름으로 검색하거나 채널 링크(youtube.com/@채널이름)를 붙여넣으면 그 채널의 숏츠를 불러와요</li>
+          <li>재생목록 링크(youtube.com/playlist?list=…)도 넣을 수 있어요</li>
         </ul>
         <p class="source-current" id="sourceCurrent"></p>
       </div>
@@ -154,6 +166,7 @@
   <script src="js/app.js"></script>
   <script src="js/panels.js"></script>
   <script src="js/menu.js"></script>
+  <script src="js/search.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
