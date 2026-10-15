@@ -81,6 +81,16 @@ body {
   cursor: grabbing;
 }
 
+/* 영상이 멈춰 있을 때: 아래쪽 띠(유튜브 공유 버튼, Shorts 로고)를 비워서 누를 수 있게 한다 */
+.touch-layer.paused {
+  clip-path: inset(0 0 72px 0);
+}
+
+/* 유튜브 공유 창 등을 쓰는 동안: 터치 레이어를 치운다 */
+.touch-layer.passthrough {
+  pointer-events: none;
+}
+
 .side-actions {
   position: absolute;
   top: 22%;
