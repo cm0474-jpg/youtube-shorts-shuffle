@@ -81,14 +81,32 @@ body {
   cursor: grabbing;
 }
 
-/* 영상이 멈춰 있을 때: 아래쪽 띠(유튜브 공유 버튼, Shorts 로고)를 비워서 누를 수 있게 한다 */
-.touch-layer.paused {
-  clip-path: inset(0 0 72px 0);
+/* 멈춘 화면에서 유튜브의 공유 버튼 / Shorts 로고 위에 겹치는 투명 버튼 */
+.yt-hit {
+  position: absolute;
+  bottom: 0;
+  z-index: 3;
+  height: 72px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }
 
-/* 유튜브 공유 창 등을 쓰는 동안: 터치 레이어를 치운다 */
-.touch-layer.passthrough {
-  pointer-events: none;
+.yt-hit:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.yt-share-hit {
+  left: 16px;
+  width: 84px;
+  border-radius: 36px;
+}
+
+.yt-logo-hit {
+  right: 16px;
+  width: 150px;
+  border-radius: 36px;
 }
 
 .side-actions {
@@ -701,6 +719,23 @@ button.action:active .round-btn {
   position: absolute;
   left: 8px;
   font-weight: 700;
+}
+
+/* 공유 */
+.share-link {
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--sheet-input);
+  color: #3ea6ff;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.share-copy {
+  margin-top: 12px;
+  font-weight: 600;
 }
 
 /* 설명 */

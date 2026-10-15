@@ -33,6 +33,10 @@
       <button class="round-btn" id="sourceBtn" type="button" aria-label="다른 채널/재생목록 불러오기">📂</button>
     </nav>
 
+    <!-- 영상이 멈췄을 때 유튜브가 띄우는 공유 버튼 / Shorts 로고 자리에 겹치는 투명 버튼 -->
+    <button class="yt-hit yt-share-hit" id="ytShareHit" type="button" aria-label="공유" hidden></button>
+    <button class="yt-hit yt-logo-hit" id="ytLogoHit" type="button" aria-label="유튜브 앱에서 보기" hidden></button>
+
     <!-- 오른쪽 위 ⋮ 메뉴 (설명, 자막, 화질) -->
     <button class="more-btn" id="moreBtn" type="button" aria-label="더보기">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
@@ -124,6 +128,17 @@
         <ul class="option-list">
           <li><button class="option-item selected" type="button" disabled><span id="qualityCurrent">자동</span></button></li>
         </ul>
+      </div>
+    </section>
+
+    <section class="sheet sheet-compact" id="shareSheet" aria-hidden="true" aria-labelledby="shareHeading">
+      <header class="sheet-header">
+        <h2 id="shareHeading">공유</h2>
+        <button class="sheet-close" type="button" data-close aria-label="닫기">✕</button>
+      </header>
+      <div class="sheet-body">
+        <p class="share-link" id="shareLink"></p>
+        <button class="sheet-btn share-copy" id="shareCopy" type="button">링크 복사</button>
       </div>
     </section>
 

@@ -1,6 +1,7 @@
 'use strict';
 
 // 오른쪽 위 ⋮ 메뉴: 설명, 자막, 화질 (유튜브 숏츠 앱의 더보기 메뉴와 같은 구성)
+// 멈춘 화면의 공유 버튼(링크 복사)과 Shorts 로고(유튜브 앱으로 열기)
 
 const CAPTION_STORAGE_KEY = 'shorts-shuffle:captions';
 
@@ -166,3 +167,53 @@ function currentQualityLabel() {
   const q = player?.getPlaybackQuality?.();
   return QUALITY_LABELS[q] ? `자동 (${QUALITY_LABELS[q]})` : '자동';
 }
+
+// ===== 공유 (링크 복사) =====
+const shareSheet = document.getElementById('shareSheet');
+const shareLink = document.getElementById('shareLink');
+const shareCopy = document.getElementById('shareCopy');
+
+function shortsUrl(videoId) {
+  return `https://youtube.com/shorts/${videoId}`;
+}
+
+ytShareHit.addEventListener('click', () => {
+  shareLink.textContent = shortsUrl(currentVideoId);
+  shareCopy.textContent = '링크 복사';
+  openSheet(shareSheet);
+});
+
+shareCopy.addEventListener('click', async () => {
+  const url = shareLink.textContent;
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    // 클립보드 API 를 못 쓰는 브라우저는 예전 방식으로 복사한다
+    const input = document.createElement('textarea');
+    input.value = url;
+    document.body.append(input);
+    input.select();
+    document.execCommand('copy');
+    input.remove();
+  }
+  shareCopy.textContent = '✓ 복사됨';
+  setTimeout(closeSheet, 700);
+});
+
+// ===== Shorts 로고 → 유튜브 앱으로 열기 =====
+// 안드로이드: intent 주소로 유튜브 앱을 직접 연다 (앱이 없으면 웹으로)
+// 아이폰: youtube:// 주소로 앱을 연다
+// PC: 새 탭에서 유튜브 웹으로 연다
+ytLogoHit.addEventListener('click', () => {
+  const url = shortsUrl(currentVideoId);
+  const path = url.replace('https://', '');
+  player.pauseVideo();
+  if (/Android/i.test(navigator.userAgent)) {
+    location.href = `intent://${path}#Intent;scheme=https;package=com.google.android.youtube;`
+      + `S.browser_fallback_url=${encodeURIComponent(url)};end`;
+  } else if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    location.href = `youtube://${path}`;
+  } else {
+    window.open(url, '_blank', 'noopener');
+  }
+});

@@ -23,6 +23,8 @@ const touchLayer = document.getElementById('touchLayer');
 const soundBtn = document.getElementById('soundBtn');
 const shuffleBtn = document.getElementById('shuffleBtn');
 const centerIcon = document.getElementById('centerIcon');
+const ytShareHit = document.getElementById('ytShareHit');
+const ytLogoHit = document.getElementById('ytLogoHit');
 
 // ===== 재생 순서 =====
 function shuffle(arr) {
@@ -191,25 +193,15 @@ function updateSoundBtn() {
   soundBtn.setAttribute('aria-label', muted ? '소리 켜기' : '소리 끄기');
 }
 
-// ===== 유튜브 플레이어 자체 버튼 누를 수 있게 하기 =====
+// ===== 멈춘 화면의 유튜브 버튼 자리 =====
 // 영상이 멈추면 유튜브가 영상 위에 자체 버튼(왼쪽 아래 공유, 오른쪽 아래 Shorts 로고)을 띄운다.
-// 투명한 터치 레이어가 이 버튼들을 가리지 않도록, 멈춰 있는 동안에는 아래쪽 띠를 비워 둔다(.paused).
-// 그 버튼을 눌러 유튜브 쪽으로 포커스가 넘어가면(공유 창 등) 터치 레이어를 아예 치운다(.passthrough).
-// 다시 재생되면 원래대로 덮어서 스와이프를 받는다.
+// 그 버튼들은 플레이어(iframe) 안에 있어서 동작을 바꿀 수 없으므로, 멈춰 있는 동안에는
+// 같은 자리에 투명한 버튼을 올려서 우리 기능(링크 복사, 유튜브 앱으로 열기)을 연결한다 (menu.js).
 function updateTouchLayer(state) {
   const paused = state === YT.PlayerState.PAUSED || state === YT.PlayerState.CUED;
-  touchLayer.classList.toggle('paused', paused);
-  if (!paused) touchLayer.classList.remove('passthrough');
+  ytShareHit.hidden = !paused;
+  ytLogoHit.hidden = !paused;
 }
-
-window.addEventListener('blur', () => {
-  // 다른 앱/탭으로 나갈 때도 blur 가 오므로, 포커스가 플레이어 iframe 으로 갔을 때만 처리한다
-  setTimeout(() => {
-    if (document.activeElement === player?.getIframe?.()) touchLayer.classList.add('passthrough');
-  });
-});
-
-window.addEventListener('focus', () => touchLayer.classList.remove('passthrough'));
 
 // ===== 터치 / 마우스 스와이프 =====
 let dragging = false;
