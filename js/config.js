@@ -8,4 +8,4 @@ const YOUTUBE_API_KEY = 'AIzaSyD0cVQp0RIJ6wNCbPDYzwaArKQ3gK0rXUA';
 // Google Cloud Console 의 Google 인증 플랫폼 → 클라이언트에서 만든 "웹 애플리케이션" 클라이언트 ID.
 // 클라이언트 ID 는 공개되어도 되는 값이고, 승인된 자바스크립트 원본(이 사이트 주소)에서만 동작한다.
 // 비워 두면 로그인 기능은 숨겨진다.
-const GOOGLE_CLIENT_ID = '';
+const GOOGLE_CLIENT_ID = '269821159009-30ofobss4qelhful7if63s6n29b8cu97.apps.googleusercontent.com';
