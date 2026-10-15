@@ -30,10 +30,14 @@
     <!-- 위/아래는 유튜브 숏츠 자체 UI(채널명, 제목, 좋아요)가 차지하므로 버튼은 오른쪽 가운데에 둔다 -->
     <!-- 좋아요/댓글 버튼은 API 키가 있을 때만 보인다 -->
     <nav class="side-actions">
-      <div class="action" id="likeAction" hidden>
-        <span class="action-icon" data-icon="like"></span>
+      <button class="action" id="likeBtn" type="button" aria-label="좋아요" aria-pressed="false" hidden>
+        <span class="action-icon" id="likeIcon" data-icon="like"></span>
         <span class="action-label" id="likeCount">좋아요</span>
-      </div>
+      </button>
+      <button class="action" id="dislikeBtn" type="button" aria-label="싫어요" aria-pressed="false" hidden>
+        <span class="action-icon" id="dislikeIcon" data-icon="dislike"></span>
+        <span class="action-label">싫어요</span>
+      </button>
       <button class="action" id="commentBtn" type="button" aria-label="댓글 보기" hidden>
         <span class="action-icon" data-icon="comment"></span>
         <span class="action-label" id="commentCount">댓글</span>
@@ -88,11 +92,19 @@
         <p class="sheet-status" id="commentsStatus"></p>
         <button class="sheet-btn" id="commentsMore" type="button" hidden>댓글 더 보기</button>
       </div>
+      <!-- 맨 아래 댓글 입력칸은 account.js 에서 붙인다 (로그인 기능이 있을 때) -->
     </section>
 
     <section class="sheet sheet-compact" id="menuSheet" aria-hidden="true" aria-label="더보기 메뉴">
       <div class="sheet-handle" aria-hidden="true"></div>
       <ul class="menu-list">
+        <li id="menuAccountItem" hidden>
+          <button class="menu-item" id="menuAccount" type="button">
+            <span class="menu-icon" id="menuAccountIcon" data-icon="account"></span>
+            <span id="menuAccountLabel">로그인</span>
+            <span class="menu-value" id="menuAccountValue"></span>
+          </button>
+        </li>
         <li>
           <button class="menu-item" id="menuDesc" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>
@@ -177,9 +189,33 @@
       </div>
     </section>
 
+    <section class="sheet sheet-compact" id="accountSheet" aria-hidden="true" aria-labelledby="accountHeading">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <header class="sheet-header">
+        <h2 id="accountHeading">계정</h2>
+        <button class="sheet-close" type="button" data-close aria-label="닫기" data-icon="close"></button>
+      </header>
+      <div class="sheet-body">
+        <div class="account-info">
+          <img class="channel-avatar" id="accountAvatar" alt="" referrerpolicy="no-referrer">
+          <div class="channel-info">
+            <strong id="accountName"></strong>
+            <span id="accountHandle"></span>
+          </div>
+        </div>
+        <p class="sheet-status" id="accountNote"></p>
+        <button class="sheet-btn" id="logoutBtn" type="button">로그아웃</button>
+        <a class="sheet-link" href="https://myaccount.google.com/connections" target="_blank" rel="noopener">구글 계정에서 앱 권한 관리</a>
+      </div>
+    </section>
+
     <!-- 시작 화면: 처음 열면 채널을 검색하거나 링크를 넣는 화면이 나오고, 재생 중에는 📂 로 다시 연다 -->
     <section class="start-screen" id="startScreen" aria-labelledby="startTitle">
       <div class="start-inner">
+        <button class="account-btn" id="accountBtn" type="button" aria-label="로그인" hidden>
+          <span class="account-icon" id="accountBtnIcon" data-icon="account"></span>
+          <span id="accountBtnLabel">로그인</span>
+        </button>
         <button class="start-back" id="startBack" type="button" hidden>
           <span data-icon="back"></span>
           <span>재생 화면으로 돌아가기</span>
@@ -207,6 +243,7 @@
         <ul class="channel-results" id="channelResults"></ul>
         <p class="source-help" id="sourceHelp">채널 이름을 검색하거나, 채널·재생목록 링크를 붙여넣으세요</p>
         <p class="source-current" id="sourceCurrent"></p>
+        <a class="privacy-link" href="privacy.html">개인정보처리방침</a>
       </div>
     </section>
 
@@ -219,6 +256,9 @@
   <script src="js/panels.js"></script>
   <script src="js/menu.js"></script>
   <script src="js/search.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/account.js"></script>
   <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="https://accounts.google.com/gsi/client" async></script>
 </body>
 </html>

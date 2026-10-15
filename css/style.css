@@ -138,6 +138,10 @@ button.action {
   cursor: pointer;
 }
 
+button.action:disabled {
+  cursor: default;
+}
+
 .action-icon {
   display: flex;
   align-items: center;
@@ -200,7 +204,7 @@ button.action:active .action-icon {
 .sheet-backdrop {
   position: absolute;
   inset: 0;
-  z-index: 5;
+  z-index: 9;
   background: rgba(0, 0, 0, 0.4);
   opacity: 0;
   pointer-events: none;
@@ -217,7 +221,7 @@ button.action:active .action-icon {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 6;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   height: 65%;
@@ -991,4 +995,202 @@ button.action:active .action-icon {
 .reply-list .avatar {
   width: 24px;
   height: 24px;
+}
+
+/* ===== 로그인 ===== */
+/* 시작 화면 오른쪽 위 계정 버튼 */
+.account-btn {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 8px);
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 6px;
+  border: 1px solid var(--sheet-line);
+  border-radius: 20px;
+  background: transparent;
+  color: #3ea6ff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.account-btn:has(#accountBtnLabel[hidden]) {
+  padding: 4px;
+  border-color: transparent;
+}
+
+.account-icon,
+.menu-icon,
+.composer-avatar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.account-icon,
+.menu-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.account-icon svg,
+.menu-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.account-icon img,
+.menu-icon img,
+.composer-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-btn:has(#accountBtnLabel[hidden]) .account-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.account-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0;
+}
+
+.sheet-link {
+  display: block;
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.privacy-link {
+  display: block;
+  margin-top: 28px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* 댓글/답글 입력칸 */
+.composer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.comment-composer {
+  padding: 10px 16px calc(env(safe-area-inset-bottom) + 10px);
+  border-top: 1px solid var(--sheet-line);
+  background: var(--sheet-bg);
+}
+
+.reply-composer {
+  margin-top: 8px;
+}
+
+.composer-avatar {
+  width: 28px;
+  height: 28px;
+  color: var(--text-muted);
+}
+
+.composer-avatar svg {
+  width: 28px;
+  height: 28px;
+  fill: currentColor;
+}
+
+.composer input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--sheet-line);
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 16px; /* 16px 보다 작으면 iOS 가 입력할 때 화면을 확대한다 */
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.composer input:focus {
+  outline: none;
+  border-bottom-color: var(--fg);
+}
+
+.composer-send {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #3ea6ff;
+  cursor: pointer;
+}
+
+.composer-send:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.composer-send svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.composer-status {
+  flex-basis: 100%;
+  color: #ff6b6b;
+  font-size: 13px;
+}
+
+.composer-status:empty {
+  display: none;
+}
+
+.comment-likes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.comment-reply-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  margin-left: 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.comment-reply-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.comment-reply-btn:active {
+  background: rgba(255, 255, 255, 0.1);
 }

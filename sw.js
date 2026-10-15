@@ -4,7 +4,7 @@
 // 수정한 내용이 바로 보이도록 "항상 네트워크에서 최신 파일을 먼저 받고, 실패할 때만 저장본"을 쓴다.
 // 유튜브 플레이어, YouTube Data API 같은 다른 사이트 요청은 건드리지 않는다.
 
-const CACHE = 'shorts-shuffle-v2';
+const CACHE = 'shorts-shuffle-v3';
 const APP_SHELL = [
   './',
   'index.html',
@@ -16,6 +16,9 @@ const APP_SHELL = [
   'js/panels.js',
   'js/menu.js',
   'js/search.js',
+  'js/auth.js',
+  'js/account.js',
+  'privacy.html',
   'manifest.json',
   'icons/icon-192.png',
   'icons/icon-512.png',

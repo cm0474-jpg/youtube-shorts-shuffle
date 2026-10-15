@@ -26,12 +26,89 @@ async function ytGet(endpoint, params) {
   return data;
 }
 
+// 로그인한 사용자 권한으로 보내는 요청 (좋아요/싫어요, 댓글/답글 쓰기, 내 채널 정보)
+// 토큰은 auth.js 의 getAccessToken() 이 준다 (로그인 안 했으면 로그인 창을 띄운다)
+async function ytAuthRequest(method, endpoint, params = {}, body) {
+  const token = await getAccessToken();
+  const url = new URL(endpoint, YT_API_BASE);
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '') url.searchParams.set(k, v);
+  }
+  const res = await fetch(url, {
+    method,
+    headers: { Authorization: `Bearer ${token}`, ...(body && { 'Content-Type': 'application/json' }) },
+    body: body && JSON.stringify(body),
+  });
+  if (res.status === 204) return {}; // 좋아요/싫어요는 성공하면 빈 응답이 온다
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 401) clearAuth(); // 토큰이 만료되었거나 권한을 해제했으면 다시 로그인하게 한다
+    const err = new Error(data.error?.message || res.statusText);
+    err.reason = data.error?.errors?.[0]?.reason || data.error?.status || 'unknown';
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+// ===== 로그인 사용자 기능 =====
+// 비용: 좋아요/싫어요, 댓글, 답글 쓰기 50 units / 내 평가 확인, 내 채널 정보 1 unit
+
+// rating: 'like' | 'dislike' | 'none'
+function rateVideo(videoId, rating) {
+  return ytAuthRequest('POST', 'videos/rate', { id: videoId, rating });
+}
+
+// 내가 이 영상들에 누른 평가 → Map(videoId → 'like' | 'dislike' | 'none')
+async function getMyRatings(ids) {
+  const data = await ytAuthRequest('GET', 'videos/getRating', { id: ids.join(',') });
+  return new Map((data.items || []).map((item) => [item.videoId, item.rating]));
+}
+
+async function fetchMyChannel() {
+  const data = await ytAuthRequest('GET', 'channels', { part: 'snippet', mine: 'true' });
+  const ch = data.items?.[0];
+  return ch
+    ? { hasChannel: true, title: ch.snippet.title, handle: ch.snippet.customUrl || '', avatar: ch.snippet.thumbnails?.default?.url || '' }
+    : { hasChannel: false, title: '', handle: '', avatar: '' };
+}
+
+function toComment(snippet, extra = {}) {
+  return {
+    author: snippet.authorDisplayName,
+    avatar: snippet.authorProfileImageUrl,
+    text: snippet.textOriginal ?? snippet.textDisplay,
+    likeCount: snippet.likeCount || 0,
+    publishedAt: snippet.publishedAt,
+    ...extra,
+  };
+}
+
+async function postComment(videoId, text) {
+  const data = await ytAuthRequest('POST', 'commentThreads', { part: 'snippet' }, {
+    snippet: { videoId, topLevelComment: { snippet: { textOriginal: text } } },
+  });
+  return toComment(data.snippet.topLevelComment.snippet, { id: data.id, replyCount: 0 });
+}
+
+async function postReply(parentId, text) {
+  const data = await ytAuthRequest('POST', 'comments', { part: 'snippet' }, {
+    snippet: { parentId, textOriginal: text },
+  });
+  return toComment(data.snippet, { replyCount: 0 });
+}
+
 // 사용자에게 보여줄 에러 문구
 function apiErrorMessage(err) {
   const reason = err.reason || '';
   const message = err.message || '';
   if (reason === 'quotaExceeded') return '오늘 API 사용량을 다 썼어요. 내일 다시 시도해 주세요';
   if (reason === 'commentsDisabled') return '댓글이 사용 중지된 영상이에요';
+  if (reason === 'notLoggedIn') return '로그인이 필요해요';
+  if (reason === 'loginCancelled') return '로그인이 취소되었어요';
+  if (err.status === 401) return '로그인이 만료되었어요. 다시 시도해 주세요';
+  if (reason === 'ineligibleAccount' || reason === 'forbidden' && message.includes('channel')) return '댓글을 쓰려면 유튜브 채널이 있어야 해요 (유튜브 앱에서 채널을 먼저 만들어 주세요)';
+  if (reason === 'insufficientPermissions' || reason === 'ACCESS_TOKEN_SCOPE_INSUFFICIENT') return '로그인할 때 유튜브 권한을 허용해 주세요';
   if (reason === 'channelNotFound') return '채널을 찾을 수 없어요';
   if (reason === 'empty') return '재생할 수 있는 영상이 없어요';
   if (reason === 'playlistNotFound') return '재생목록을 찾을 수 없어요. 비공개 재생목록인지 확인해 주세요';

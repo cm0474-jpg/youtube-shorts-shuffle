@@ -3,7 +3,8 @@
 // 시작 화면(채널/재생목록 불러오기), 오른쪽 버튼(좋아요 수, 댓글), 아래에서 올라오는 댓글 창
 
 // ===== DOM =====
-const likeAction = document.getElementById('likeAction');
+const likeBtn = document.getElementById('likeBtn');
+const dislikeBtn = document.getElementById('dislikeBtn');
 const likeCount = document.getElementById('likeCount');
 const commentBtn = document.getElementById('commentBtn');
 const commentCount = document.getElementById('commentCount');
@@ -26,7 +27,7 @@ let currentVideoId = null;
 let openedSheet = null;
 
 if (hasApiKey) {
-  likeAction.hidden = false;
+  likeBtn.hidden = false;
   commentBtn.hidden = false;
 }
 
@@ -36,6 +37,7 @@ function updateVideoInfo(videoId) {
   currentVideoId = videoId;
   if (!hasApiKey) return;
   renderCounts(statsCache.get(videoId));
+  updateMyRating(videoId); // account.js: 로그인했으면 내가 누른 좋아요/싫어요를 표시한다
   if (!statsCache.has(videoId)) {
     fetchStats([videoId])
       .then(() => {
@@ -171,7 +173,8 @@ async function loadMoreComments() {
 }
 
 // 댓글 내용은 textContent 로만 넣는다 (innerHTML 을 쓰면 댓글에 든 코드가 실행될 수 있다)
-function renderComment(c) {
+// isReply: 답글은 답글 버튼/답글 목록이 없다
+function renderComment(c, { isReply = false } = {}) {
   const li = document.createElement('li');
   li.className = 'comment';
 
@@ -200,22 +203,29 @@ function renderComment(c) {
   text.className = 'comment-text';
   text.textContent = c.text;
 
-  // 좋아요 수 (좋아요/싫어요/답글 쓰기는 로그인이 필요해서 숫자만 보여준다)
+  // 좋아요 수 (남의 댓글에 좋아요 누르기는 YouTube Data API 가 지원하지 않아서 숫자만 보여준다)
   const actions = document.createElement('div');
   actions.className = 'comment-actions';
-  actions.innerHTML = icon('like');
   const likes = document.createElement('span');
-  likes.textContent = c.likeCount ? formatCount(c.likeCount) : '';
+  likes.className = 'comment-likes';
+  likes.innerHTML = icon('like');
+  likes.append(c.likeCount ? formatCount(c.likeCount) : '');
   actions.append(likes);
 
   body.append(meta, text, actions);
-  if (c.replyCount) body.append(...repliesSection(c));
+  if (!isReply) {
+    const thread = replyThread(c);
+    if (hasLogin) actions.append(thread.replyButton);
+    body.append(...thread.nodes);
+  }
   li.append(avatar, body);
   return li;
 }
 
-// "답글 N개" 를 누르면 답글을 펼친다
-function repliesSection(c) {
+// 댓글 아래의 답글 부분: 답글 쓰기 칸, "답글 N개" 펼치기, 답글 목록, 답글 더보기
+function replyThread(c) {
+  let replyCount = c.replyCount || 0;
+
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.className = 'replies-toggle';
@@ -231,8 +241,9 @@ function repliesSection(c) {
   let loaded = false;
   let nextToken = null;
   const setToggle = (open) => {
+    toggle.hidden = !replyCount;
     toggle.innerHTML = `${icon(open ? 'collapse' : 'expand')}<span></span>`;
-    toggle.querySelector('span').textContent = open ? '답글 숨기기' : `답글 ${c.replyCount.toLocaleString('ko-KR')}개`;
+    toggle.querySelector('span').textContent = open ? '답글 숨기기' : `답글 ${replyCount.toLocaleString('ko-KR')}개`;
   };
   setToggle(false);
 
@@ -240,7 +251,7 @@ function repliesSection(c) {
     more.hidden = true;
     try {
       const { replies, nextPageToken } = await fetchReplies(c.id, nextToken || undefined);
-      replies.forEach((r) => list.append(renderComment({ ...r, replyCount: 0 })));
+      replies.forEach((r) => list.append(renderComment(r, { isReply: true })));
       nextToken = nextPageToken || null;
       more.hidden = !nextToken;
     } catch {
@@ -264,7 +275,99 @@ function repliesSection(c) {
     }
   });
   more.addEventListener('click', loadReplies);
-  return [toggle, list, more];
+
+  // 답글 쓰기 (로그인 필요)
+  const replyButton = document.createElement('button');
+  replyButton.type = 'button';
+  replyButton.className = 'comment-reply-btn';
+  replyButton.innerHTML = icon('comment');
+  replyButton.setAttribute('aria-label', '답글 달기');
+
+  const form = createComposer('답글 추가...', async (textValue) => {
+    const reply = await postReply(c.id, textValue);
+    replyCount += 1;
+    list.hidden = false;
+    setToggle(true);
+    list.append(renderComment(reply, { isReply: true }));
+  });
+  form.element.classList.add('reply-composer');
+  form.element.hidden = true;
+
+  replyButton.addEventListener('click', () => {
+    // 로그인 창은 버튼을 누른 순간에 띄워야 브라우저가 막지 않는다
+    getAccessToken()
+      .then(() => {
+        form.element.hidden = false;
+        form.input.focus();
+      })
+      .catch(() => {});
+  });
+  form.onCancel = () => { form.element.hidden = true; };
+
+  return { replyButton, nodes: [form.element, toggle, list, more] };
+}
+
+// 댓글/답글 입력칸: [내 프로필] [입력칸] [보내기]. onSubmit 이 끝나면 칸을 비운다
+function createComposer(placeholder, onSubmit) {
+  const element = document.createElement('form');
+  element.className = 'composer';
+  const avatarSlot = document.createElement('span');
+  avatarSlot.className = 'composer-avatar';
+  fillAvatar(avatarSlot, currentUser());
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.maxLength = 10000;
+  input.autocomplete = 'off';
+  input.enterKeyHint = 'send';
+  input.placeholder = placeholder;
+  input.setAttribute('aria-label', placeholder);
+  const send = document.createElement('button');
+  send.type = 'submit';
+  send.className = 'composer-send';
+  send.disabled = true;
+  send.setAttribute('aria-label', '보내기');
+  send.innerHTML = icon('send');
+  const status = document.createElement('p');
+  status.className = 'composer-status';
+  element.append(avatarSlot, input, send, status);
+
+  const composer = { element, input, onCancel: null };
+  input.addEventListener('input', () => { send.disabled = !input.value.trim(); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && composer.onCancel) {
+      e.stopPropagation();
+      composer.onCancel();
+    }
+  });
+  element.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const value = input.value.trim();
+    if (!value) return;
+    send.disabled = true;
+    status.textContent = '';
+    try {
+      await onSubmit(value);
+      input.value = '';
+      composer.onCancel?.();
+    } catch (err) {
+      status.textContent = apiErrorMessage(err);
+      send.disabled = false;
+    }
+  });
+  return composer;
+}
+
+// 내 프로필 사진 (없으면 사람 모양 아이콘)
+function fillAvatar(slot, user) {
+  if (user?.avatar) {
+    const img = document.createElement('img');
+    img.src = user.avatar;
+    img.alt = '';
+    img.referrerPolicy = 'no-referrer';
+    slot.replaceChildren(img);
+  } else {
+    slot.innerHTML = icon('account');
+  }
 }
 
 // ===== 시작 화면: 영상 불러오기 (재생목록 / 채널) =====
