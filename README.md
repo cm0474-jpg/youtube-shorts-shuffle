@@ -2,6 +2,9 @@
 
 유튜브 숏츠와 재생목록 동영상을 **랜덤으로 재생**하는 모바일 최적화 웹앱(PWA)입니다.
 
+- 사이트: https://cm0474-jpg.github.io/youtube-shorts-shuffle/
+- 할 일과 베타 피드백 기록: [ROADMAP.md](ROADMAP.md)
+
 ## 배경
 
 유튜브는 재생목록 내 동영상이나 숏츠를 랜덤으로 재생하는 기능을 제공하지 않습니다.
