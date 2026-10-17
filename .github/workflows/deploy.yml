@@ -1,6 +1,6 @@
 # GitHub Pages 배포
 # API 키를 저장소에 커밋하지 않도록, 배포할 때만 저장소 Secrets 로 js/config.js 를 만들어 넣는다.
-# 필요한 Secrets: YOUTUBE_API_KEY, GOOGLE_CLIENT_ID
+# 필요한 Secrets: YT_API_KEY, GOOGLE_OAUTH_CLIENT_ID (예전 이름 YOUTUBE_API_KEY, GOOGLE_CLIENT_ID 도 읽음)
 # 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 두어야 한다.
 name: Deploy to GitHub Pages
 
@@ -28,9 +28,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Write js/config.js from repository secrets
+        # 새 이름(YT_API_KEY, GOOGLE_OAUTH_CLIENT_ID)이 있으면 그것을, 없으면 예전 이름을 쓴다
         env:
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          YOUTUBE_API_KEY: ${{ secrets.YT_API_KEY || secrets.YOUTUBE_API_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID || secrets.GOOGLE_CLIENT_ID }}
         # 값을 붙여넣을 때 섞인 공백/줄바꿈은 지우고, 형식이 틀리면 배포를 멈춘다
         # (배포가 멈추면 이전에 배포된 사이트가 그대로 유지된다)
         run: |
