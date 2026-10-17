@@ -4,6 +4,7 @@
 
 - 사이트: https://cm0474-jpg.github.io/youtube-shorts-shuffle/
 - 할 일과 베타 피드백 기록: [ROADMAP.md](ROADMAP.md)
+- 작업 기록 (사람의 결정 / 에이전트 작업 / 검증): [AGENT_LOG.md](AGENT_LOG.md)
 
 ## 배경
 
