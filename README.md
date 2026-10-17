@@ -64,7 +64,7 @@
 - 사용량: 좋아요/싫어요·댓글·답글 쓰기는 한 번에 50 units 입니다.
 
 설정 방법: Google Cloud Console → Google 인증 플랫폼에서 OAuth 동의 화면(외부, 게시됨)과 **웹 애플리케이션** 클라이언트를 만들고,
-승인된 자바스크립트 원본에 `https://cm0474-jpg.github.io`, `http://localhost:8000`을 넣은 뒤 `js/config.js`의 `GOOGLE_CLIENT_ID`에 클라이언트 ID를 넣습니다.
+승인된 자바스크립트 원본에 `https://cm0474-jpg.github.io`, `http://localhost:8000`을 넣은 뒤 클라이언트 ID를 `GOOGLE_CLIENT_ID`로 설정합니다 (아래 "키 설정" 참고).
 
 ## 홈 화면에 추가 (앱처럼 쓰기)
 
@@ -85,7 +85,9 @@ PWA라서 설치 없이 홈 화면에 추가하면 주소창 없이 전체 화�
 2. **사용자 인증 정보 → API 키**를 만들고 다음과 같이 제한합니다.
    - 애플리케이션 제한사항: 웹사이트 — `https://cm0474-jpg.github.io/*`, `http://localhost:8000/*`
    - API 제한사항: YouTube Data API v3
-3. `js/config.js`의 `YOUTUBE_API_KEY`에 키를 넣습니다.
+3. 키는 저장소에 커밋하지 않습니다.
+   - 로컬: `cp js/config.example.js js/config.js` 후 값을 채웁니다 (`js/config.js`는 `.gitignore`에 들어 있음).
+   - 배포: 저장소 Settings → Secrets and variables → Actions 에 `YOUTUBE_API_KEY`, `GOOGLE_CLIENT_ID`를 넣으면 `.github/workflows/deploy.yml`이 배포할 때 `js/config.js`를 만들어 넣습니다.
 
 브라우저에서 동작하는 앱이라 키는 페이지 코드에 공개됩니다. 위의 제한 설정 덕분에 이 사이트에서, YouTube 조회 용도로만 쓸 수 있습니다.
 
@@ -105,7 +107,7 @@ python3 -m http.server 8000
 index.html          화면 구조
 css/style.css       9:16 세로 레이아웃, 버튼, 아래에서 올라오는 창
 js/icons.js         아이콘 (Material Icons, 모든 기기에서 같은 모양)
-js/config.js        YouTube Data API 키
+js/config.example.js  설정 예시 (실제 js/config.js 는 커밋하지 않음)
 js/youtube-api.js   YouTube Data API 호출 (재생목록, 채널, 좋아요 수, 댓글)
 js/app.js           랜덤 순서, 스와이프, 플레이어 제어
 js/panels.js        시작 화면(링크 입력), 좋아요/댓글 표시, 댓글 창

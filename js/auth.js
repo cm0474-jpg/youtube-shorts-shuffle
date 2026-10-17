@@ -7,7 +7,7 @@
 
 const AUTH_STORAGE_KEY = 'shorts-shuffle:auth';
 const AUTH_SCOPE = 'https://www.googleapis.com/auth/youtube.force-ssl';
-const hasLogin = Boolean(GOOGLE_CLIENT_ID);
+const hasLogin = typeof GOOGLE_CLIENT_ID !== 'undefined' && Boolean(GOOGLE_CLIENT_ID);
 
 let auth = loadAuth(); // { token, expiresAt, me: { title, handle, avatar, hasChannel } }
 let tokenClient = null;

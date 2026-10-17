@@ -8,7 +8,8 @@ const YT_API_BASE = 'https://www.googleapis.com/youtube/v3/';
 // (50개당 1 unit 이므로 5,000개면 100 units)
 const MAX_SOURCE_VIDEOS = 5000;
 
-const hasApiKey = Boolean(YOUTUBE_API_KEY);
+// js/config.js 가 없거나 비어 있으면 API 기능을 끈다 (config.example.js 참고)
+const hasApiKey = typeof YOUTUBE_API_KEY !== 'undefined' && Boolean(YOUTUBE_API_KEY);
 
 async function ytGet(endpoint, params) {
   const url = new URL(endpoint, YT_API_BASE);
