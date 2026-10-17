@@ -31,9 +31,17 @@ jobs:
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+        # 값을 붙여넣을 때 섞인 공백/줄바꿈은 지우고, 형식이 틀리면 배포를 멈춘다
+        # (배포가 멈추면 이전에 배포된 사이트가 그대로 유지된다)
         run: |
-          if [ -z "$YOUTUBE_API_KEY" ]; then
-            echo "::error::YOUTUBE_API_KEY secret is not set"
+          YOUTUBE_API_KEY="$(printf '%s' "$YOUTUBE_API_KEY" | tr -d '[:space:]')"
+          GOOGLE_CLIENT_ID="$(printf '%s' "$GOOGLE_CLIENT_ID" | tr -d '[:space:]')"
+          if ! printf '%s' "$YOUTUBE_API_KEY" | grep -Eq '^AIza[0-9A-Za-z_-]{35}$'; then
+            echo "::error::YOUTUBE_API_KEY secret is missing or is not an API key (AIza...)"
+            exit 1
+          fi
+          if [ -n "$GOOGLE_CLIENT_ID" ] && ! printf '%s' "$GOOGLE_CLIENT_ID" | grep -Eq '^[0-9]+-[0-9a-z]+\.apps\.googleusercontent\.com$'; then
+            echo "::error::GOOGLE_CLIENT_ID secret is not an OAuth client ID (...apps.googleusercontent.com)"
             exit 1
           fi
           printf "const YOUTUBE_API_KEY = '%s';\nconst GOOGLE_CLIENT_ID = '%s';\n" "$YOUTUBE_API_KEY" "$GOOGLE_CLIENT_ID" > js/config.js
