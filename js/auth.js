@@ -130,9 +130,11 @@ function clearAuth() {
   saveAuth();
 }
 
+// 로그아웃: 권한을 해제하고, 이 기기에 남은 내 기록(최근 검색어 등)도 지운다 (user-data.js)
 function logout() {
   if (auth?.token && window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(auth.token, () => {});
   auth = null;
   saveAuth();
+  clearUserData();
   notifyAuth();
 }

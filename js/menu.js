@@ -3,8 +3,6 @@
 // 오른쪽 위 ⋮ 메뉴: 설명, 자막, 화질 (유튜브 숏츠 앱의 더보기 메뉴와 같은 구성)
 // 멈춘 화면의 공유 버튼(링크 복사)과 Shorts 로고(유튜브 앱으로 열기)
 
-const CAPTION_STORAGE_KEY = 'shorts-shuffle:captions';
-
 // ===== DOM =====
 const moreBtn = document.getElementById('moreBtn');
 const menuSheet = document.getElementById('menuSheet');
@@ -78,19 +76,27 @@ let captionLang = null;   // null = 사용 안함
 let captionLabel = null;  // 메뉴에 보여줄 이름 (예: 한국어)
 let captionAppliedFor = null;
 
-try {
-  const saved = JSON.parse(localStorage.getItem(CAPTION_STORAGE_KEY) || 'null');
-  if (saved) ({ lang: captionLang, label: captionLabel } = saved);
-} catch {
-  // 저장된 값이 없거나 저장소를 쓸 수 없으면 자막은 꺼진 상태로 시작한다
+// 자막 설정도 user-data.js 를 거친다 (로그인한 동안만 저장, 로그아웃하면 삭제되고 자막은 꺼진다)
+function loadCaptionPreference() {
+  const saved = userDataGet('captions', null);
+  captionLang = saved?.lang || null;
+  captionLabel = saved?.label || null;
+}
+loadCaptionPreference();
+
+onAuthChange((user) => {
+  if (user) return;
+  loadCaptionPreference();
+  if (player) reapplyCaptionsNow();
+});
+
+function reapplyCaptionsNow() {
+  captionAppliedFor = null;
+  applyCaptionPreference(currentVideoId);
 }
 
 function saveCaptionPreference() {
-  try {
-    localStorage.setItem(CAPTION_STORAGE_KEY, JSON.stringify(captionLang ? { lang: captionLang, label: captionLabel } : null));
-  } catch {
-    // 저장이 막혀도 이번 실행 동안은 그대로 동작한다
-  }
+  userDataSet('captions', captionLang ? { lang: captionLang, label: captionLabel } : null);
 }
 
 // 시간을 옮기면(진행 바, 반복 재생) 플레이어가 버퍼링하면서 자기 기본 설정대로 자막을 다시 켠다.

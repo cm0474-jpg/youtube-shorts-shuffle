@@ -6,9 +6,9 @@
 // - 자동완성/오타 교정은 유튜브 검색어 추천(suggestqueries)을 써서 API 사용량이 들지 않는다
 // - 채널 검색(100 units)은 검색 버튼을 눌렀을 때만 하고, 같은 검색어의 결과는 하루 동안 저장해 둔다
 // - 링크나 @핸들을 넣으면 검색 없이 바로 채널/재생목록을 불러온다
+//
+// 최근 검색어와 검색 결과 저장본은 user-data.js 를 거쳐 저장한다 (로그인한 동안만 저장, 로그아웃하면 삭제)
 
-const RECENT_STORAGE_KEY = 'shorts-shuffle:recent-searches';
-const SEARCH_CACHE_KEY = 'shorts-shuffle:search-cache';
 const MAX_RECENT = 10;
 const MAX_CACHED_SEARCHES = 30;
 const SEARCH_CACHE_TTL = 24 * 60 * 60 * 1000; // 하루
@@ -24,23 +24,6 @@ const searchOriginal = document.getElementById('searchOriginal');
 const channelResults = document.getElementById('channelResults');
 const sourceHelp = document.getElementById('sourceHelp');
 
-// ===== 저장소 (이 브라우저에만 저장) =====
-function readJSON(key, fallback) {
-  try {
-    return JSON.parse(localStorage.getItem(key)) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJSON(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // 시크릿 모드 등에서 저장이 막혀도 검색은 그대로 동작한다
-  }
-}
-
 // 대소문자/띄어쓰기만 다른 검색어는 같은 검색어로 본다
 function normalizeQuery(q) {
   return q.toLowerCase().replace(/\s+/g, '');
@@ -48,16 +31,16 @@ function normalizeQuery(q) {
 
 // ===== 최근 검색어 =====
 function readRecent() {
-  return readJSON(RECENT_STORAGE_KEY, []);
+  return userDataGet('recent-searches', []);
 }
 
 function addRecent(q) {
   const recent = readRecent().filter((r) => normalizeQuery(r) !== normalizeQuery(q));
-  writeJSON(RECENT_STORAGE_KEY, [q, ...recent].slice(0, MAX_RECENT));
+  userDataSet('recent-searches', [q, ...recent].slice(0, MAX_RECENT));
 }
 
 function removeRecent(q) {
-  writeJSON(RECENT_STORAGE_KEY, readRecent().filter((r) => r !== q));
+  userDataSet('recent-searches', readRecent().filter((r) => r !== q));
 }
 
 // ===== 검색어 추천 (자동완성) =====
@@ -95,7 +78,7 @@ function fetchSuggestions(q) {
 // ===== 채널 검색 (하루 동안 결과 저장) =====
 async function searchChannelsCached(query) {
   const key = normalizeQuery(query);
-  const cache = readJSON(SEARCH_CACHE_KEY, {});
+  const cache = userDataGet('search-cache', {});
   const hit = cache[key];
   if (hit && Date.now() - hit.time < SEARCH_CACHE_TTL) return hit.results;
 
@@ -104,7 +87,7 @@ async function searchChannelsCached(query) {
   // 오래된 것부터 지워서 저장 개수를 제한한다
   const keys = Object.keys(cache).sort((a, b) => cache[b].time - cache[a].time);
   keys.slice(MAX_CACHED_SEARCHES).forEach((k) => delete cache[k]);
-  writeJSON(SEARCH_CACHE_KEY, cache);
+  userDataSet('search-cache', cache);
   return results;
 }
 
@@ -304,3 +287,14 @@ function channelResultItem(ch) {
   li.append(btn);
   return li;
 }
+
+// 로그아웃하면 화면에 남아 있는 검색어, 추천, 검색 결과도 지운다 (다음 사람에게 보이지 않게)
+onAuthChange((user) => {
+  if (user) return;
+  sourceInput.value = '';
+  searchClear.hidden = true;
+  hideSuggestions();
+  clearResults();
+  sourceHelp.hidden = false;
+});
+
