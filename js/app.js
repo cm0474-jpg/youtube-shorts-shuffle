@@ -110,6 +110,8 @@ function onPlayerStateChange(e) {
   if (e.data === YT.PlayerState.PLAYING) {
     errorStreak = 0;
     applyCaptionPreference(queue[pos]);
+  } else if (e.data === YT.PlayerState.BUFFERING) {
+    reapplyCaptionsOnNextPlay(); // 시간 이동 뒤 플레이어가 자막을 다시 켜는 것을 막는다 (menu.js)
   } else if (e.data === YT.PlayerState.ENDED) {
     // 댓글 창이나 시작 화면을 보는 중에는 다음 영상으로 넘기지 않고 처음부터 반복한다
     if (isOverlayOpen()) {

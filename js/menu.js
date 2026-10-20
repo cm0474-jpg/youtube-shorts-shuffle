@@ -93,6 +93,13 @@ function saveCaptionPreference() {
   }
 }
 
+// 시간을 옮기면(진행 바, 반복 재생) 플레이어가 버퍼링하면서 자기 기본 설정대로 자막을 다시 켠다.
+// 옮기자마자 끄면 플레이어가 다시 켜 버리므로, app.js 가 버퍼링 때 이 함수를 불러 두고
+// 버퍼링이 끝나 다시 재생될 때 applyCaptionPreference 가 설정을 다시 적용하게 한다.
+function reapplyCaptionsOnNextPlay() {
+  captionAppliedFor = null;
+}
+
 // app.js 에서 영상이 재생되기 시작할 때마다 호출한다
 function applyCaptionPreference(videoId) {
   if (captionAppliedFor === videoId) return; // 일시정지 후 다시 재생할 때는 건너뛴다
