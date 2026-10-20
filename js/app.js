@@ -9,6 +9,7 @@ const SLIDE_MS = 250;        // style.css 의 --slide-duration 과 맞춘다
 
 // ===== 상태 =====
 let videoIds = [];       // 재생 대상 (시작 화면에서 불러온 채널/재생목록의 영상)
+let playOrder = 'random'; // 'random' | 'trending' (급상승순, ⋮ → 재생 순서)
 let queue = [];          // 재생 순서 (섞은 묶음을 계속 이어 붙인다)
 let pos = 0;             // queue 에서 현재 재생 중인 위치
 let player = null;       // 첫 목록을 불러온 뒤에 만든다
@@ -43,8 +44,23 @@ function shuffle(arr) {
 }
 
 // 새로 섞은 묶음을 queue 뒤에 붙인다. 묶음 경계에서 같은 영상이 연달아 나오지 않게 한다.
+// 급상승순: 하루 평균 조회수(조회수 ÷ 올린 뒤 지난 날짜)가 높은 순.
+// 오늘 올린 영상이 지나치게 앞서지 않도록 지난 날짜는 최소 1일로 본다. 조회수를 숨긴 영상은 맨 뒤.
+function trendingScore(id) {
+  const views = statsCache.get(id)?.viewCount;
+  const publishedAt = publishedAtCache.get(id);
+  if (views == null || !publishedAt) return -1;
+  const days = Math.max(1, (Date.now() - new Date(publishedAt).getTime()) / 86400000);
+  return views / days;
+}
+
+function trendingOrder(ids) {
+  return ids.slice().sort((a, b) => trendingScore(b) - trendingScore(a));
+}
+
 function extendQueue() {
-  const batch = shuffle(videoIds);
+  // 랜덤은 매번 새로 섞고, 급상승순은 끝까지 보면 다시 1위부터 이어 붙인다
+  const batch = playOrder === 'trending' ? trendingOrder(videoIds) : shuffle(videoIds);
   if (batch.length > 1 && batch[0] === queue[queue.length - 1]) {
     [batch[0], batch[1]] = [batch[1], batch[0]];
   }
@@ -347,8 +363,19 @@ touchLayer.addEventListener('wheel', (e) => {
 // ===== 버튼 =====
 soundBtn.addEventListener('click', toggleSound);
 
+// ⋮ → 재생 순서에서 고른다 (menu.js). 순위 계산에 조회수가 필요하므로 아직 못 받은 영상이 있으면 받고 나서 정렬한다
+async function setPlayOrder(order) {
+  playOrder = order;
+  if (order === 'trending') await fetchStats(videoIds).catch(() => {});
+  if (!player) return;
+  resetQueue();
+  loadCurrent();
+  slide(1);
+}
+
 shuffleBtn.addEventListener('click', () => {
   if (!player || animating) return;
+  playOrder = 'random'; // 셔플을 누르면 급상승순에서도 다시 랜덤으로 돌아온다
   resetQueue();
   loadCurrent();
   slide(1);

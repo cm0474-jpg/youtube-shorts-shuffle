@@ -74,6 +74,9 @@
 
     <div class="center-icon" id="centerIcon" aria-hidden="true"></div>
 
+    <!-- 급상승순을 골랐을 때 잠깐 떴다 사라지는 설명 (화면에 떠 있는 안내 문구의 유일한 예외) -->
+    <div class="mode-hint" id="modeHint" role="status" aria-live="polite"></div>
+
     <!-- 아래에서 올라오는 창 -->
     <div class="sheet-backdrop" id="sheetBackdrop"></div>
 
@@ -109,6 +112,13 @@
           <button class="menu-item" id="menuDesc" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>
             <span>설명</span>
+          </button>
+        </li>
+        <li>
+          <button class="menu-item" id="menuOrder" type="button">
+            <span class="menu-icon" data-icon="order"></span>
+            <span>재생 순서</span>
+            <span class="menu-value" id="menuOrderValue">랜덤</span>
           </button>
         </li>
         <li>
@@ -149,6 +159,20 @@
           </dl>
           <p class="desc-text" id="descText"></p>
         </div>
+      </div>
+    </section>
+
+    <section class="sheet sheet-compact" id="orderSheet" aria-hidden="true" aria-labelledby="orderHeading">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <header class="sheet-header">
+        <h2 id="orderHeading">재생 순서</h2>
+        <button class="sheet-close" type="button" data-close aria-label="닫기" data-icon="close"></button>
+      </header>
+      <div class="sheet-body">
+        <ul class="option-list">
+          <li><button class="option-item" type="button" data-order="random">랜덤</button></li>
+          <li><button class="option-item" type="button" data-order="trending">급상승순</button></li>
+        </ul>
       </div>
     </section>
 

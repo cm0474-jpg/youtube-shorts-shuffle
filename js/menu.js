@@ -224,3 +224,41 @@ ytLogoHit.addEventListener('click', () => {
     window.open(url, '_blank', 'noopener');
   }
 });
+
+// ===== 재생 순서 (랜덤 / 급상승순) =====
+const ORDER_LABELS = { random: '랜덤', trending: '급상승순' };
+const ORDER_HINTS = { trending: '급상승순 · 하루 평균 조회수가 높은 순서로 재생해요' };
+const orderSheet = document.getElementById('orderSheet');
+const menuOrderValue = document.getElementById('menuOrderValue');
+const modeHint = document.getElementById('modeHint');
+let modeHintTimer = null;
+
+document.getElementById('menuOrder').addEventListener('click', () => {
+  orderSheet.querySelectorAll('.option-item').forEach((btn) => {
+    btn.classList.toggle('selected', btn.dataset.order === playOrder);
+  });
+  openSheet(orderSheet);
+});
+
+orderSheet.querySelectorAll('.option-item').forEach((btn) => btn.addEventListener('click', () => {
+  closeSheet();
+  if (btn.dataset.order === playOrder) return;
+  showModeHint(ORDER_HINTS[btn.dataset.order]);
+  setPlayOrder(btn.dataset.order);
+}));
+
+// ⋮ 메뉴를 열 때 지금 순서를 보여준다 (셔플 버튼으로 랜덤으로 돌아온 경우 포함)
+moreBtn.addEventListener('click', () => {
+  menuOrderValue.textContent = ORDER_LABELS[playOrder];
+});
+
+function showModeHint(text) {
+  clearTimeout(modeHintTimer);
+  modeHint.classList.remove('show');
+  if (!text) return;
+  modeHint.textContent = text;
+  void modeHint.offsetWidth; // 애니메이션을 처음부터 다시 재생
+  modeHint.classList.add('show');
+  modeHintTimer = setTimeout(() => modeHint.classList.remove('show'), 2600);
+}
+

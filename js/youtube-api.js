@@ -151,6 +151,9 @@ function parseSource(text) {
 
 // ===== 영상 목록 =====
 // onProgress(지금까지 불러온 개수): 영상이 많으면 몇 초 걸리므로 진행 상황을 알린다
+// 영상을 올린 날짜 (급상승순 계산용). 목록을 불러올 때 함께 오므로 추가 사용량이 없다
+const publishedAtCache = new Map(); // videoId -> ISO 날짜
+
 async function fetchPlaylistVideoIds(playlistId, onProgress) {
   const ids = [];
   let pageToken;
@@ -166,6 +169,9 @@ async function fetchPlaylistVideoIds(playlistId, onProgress) {
       const privacy = item.status?.privacyStatus;
       if (privacy === 'private' || privacy === 'privacyStatusUnspecified') continue;
       ids.push(item.contentDetails.videoId);
+      if (item.contentDetails.videoPublishedAt) {
+        publishedAtCache.set(item.contentDetails.videoId, item.contentDetails.videoPublishedAt);
+      }
     }
     pageToken = data.nextPageToken;
     onProgress?.(ids.length);
@@ -239,7 +245,7 @@ async function searchChannels(query) {
 }
 
 // ===== 좋아요 수 / 댓글 수 =====
-const statsCache = new Map(); // videoId -> { likeCount, commentCount } (값이 숨겨진 영상은 null)
+const statsCache = new Map(); // videoId -> { viewCount, likeCount, commentCount } (값이 숨겨진 영상은 null)
 
 async function fetchStats(ids) {
   const missing = ids.filter((id) => !statsCache.has(id));
@@ -249,6 +255,7 @@ async function fetchStats(ids) {
     for (const item of data.items || []) {
       const s = item.statistics || {};
       statsCache.set(item.id, {
+        viewCount: s.viewCount !== undefined ? Number(s.viewCount) : null,
         likeCount: s.likeCount !== undefined ? Number(s.likeCount) : null,
         commentCount: s.commentCount !== undefined ? Number(s.commentCount) : null,
       });

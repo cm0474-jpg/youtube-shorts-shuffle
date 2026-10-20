@@ -404,9 +404,13 @@ async function loadSource(source) {
       setStatus(sourceStatus, `불러오는 중... (${count}개)`);
     });
     if (!ids.length) throw Object.assign(new Error('no videos'), { reason: 'empty' });
+    // 급상승순이면 순위에 조회수가 필요해서 먼저 받는다. 랜덤이면 재생부터 하고 뒤에서 받는다 (영상이 많으면 몇 초 걸림)
+    if (playOrder === 'trending') {
+      setStatus(sourceStatus, '급상승 순위를 계산하는 중...');
+      await fetchStats(ids).catch(() => {});
+    }
     startScreen.hidden = true;
     setVideos(ids);
-    // 좋아요/댓글 수는 재생을 시작한 뒤 뒤에서 미리 받아 둔다 (영상이 많으면 몇 초 걸리므로 기다리지 않는다)
     fetchStats(ids).catch(() => {});
     updateSourceCurrent(label, ids.length);
     setStatus(sourceStatus, '');

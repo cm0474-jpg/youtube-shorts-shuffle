@@ -1194,3 +1194,35 @@ button.action:active .action-icon {
 .comment-reply-btn:active {
   background: rgba(255, 255, 255, 0.1);
 }
+
+/* ===== 급상승순 안내 (잠깐 떴다가 사라짐) ===== */
+.mode-hint {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 64px);
+  left: 50%;
+  z-index: 4;
+  width: max-content; /* 가운데 정렬(left: 50%) 때문에 칸이 반으로 좁아져 줄이 바뀌지 않게 */
+  max-width: calc(100% - 32px);
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--fg);
+  font-size: 13px;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, -6px);
+  transition: opacity 250ms ease, transform 250ms ease;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.mode-hint.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.mode-hint:empty {
+  display: none;
+}
+
