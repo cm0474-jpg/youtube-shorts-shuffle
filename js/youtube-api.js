@@ -111,6 +111,7 @@ function apiErrorMessage(err) {
   if (reason === 'ineligibleAccount' || reason === 'forbidden' && message.includes('channel')) return '댓글을 쓰려면 유튜브 채널이 있어야 해요 (유튜브 앱에서 채널을 먼저 만들어 주세요)';
   if (reason === 'insufficientPermissions' || reason === 'ACCESS_TOKEN_SCOPE_INSUFFICIENT') return '로그인할 때 유튜브 권한을 허용해 주세요';
   if (reason === 'channelNotFound') return '채널을 찾을 수 없어요';
+  if (reason === 'noShorts') return '이 채널에는 숏츠가 없어요';
   if (reason === 'empty') return '재생할 수 있는 영상이 없어요';
   if (reason === 'playlistNotFound') return '재생목록을 찾을 수 없어요. 비공개 재생목록인지 확인해 주세요';
   if (message.includes('referer') || message.includes('referrer')) {
@@ -173,8 +174,9 @@ async function fetchPlaylistVideoIds(playlistId, onProgress) {
 }
 
 // 채널의 숏츠 목록을 가져온다.
-// 채널의 업로드 재생목록 ID는 UU...로 시작하고, 앞부분을 UUSH로 바꾸면 숏츠만 모인 재생목록이 된다.
-// (공식 문서에는 없는 방식이라, 실패하면 전체 업로드 영상으로 대신한다)
+// 채널의 업로드 재생목록 ID는 UU...로 시작하고, 앞부분을 UUSH로 바꾸면 숏츠만 모인 재생목록이 된다 (공식 문서에는 없는 방식).
+// 숏츠가 없는 채널은 이 재생목록이 없어서 404(playlistNotFound)가 온다 → 일반 영상으로 대신하지 않고 'noShorts' 로 알린다.
+// (예전에는 전체 업로드 영상을 몰래 대신 재생했는데, 숏츠 화면에 가로 영상이 나와 혼란스럽다는 베타 피드백으로 바꿨다)
 async function fetchChannelVideoIds(source, onProgress) {
   const params = { part: 'contentDetails,snippet' };
   if (source.type === 'handle') params.forHandle = source.id;
@@ -190,13 +192,16 @@ async function fetchChannelVideoIds(source, onProgress) {
   const uploads = channel.contentDetails.relatedPlaylists.uploads;
   const name = channel.snippet.title;
 
+  const noShorts = () => Object.assign(new Error('channel has no shorts'), { reason: 'noShorts' });
+  let shorts;
   try {
-    const shorts = await fetchPlaylistVideoIds(`UUSH${uploads.slice(2)}`, onProgress);
-    if (shorts.length) return { ids: shorts, label: `${name}의 숏츠` };
-  } catch {
-    // 숏츠 재생목록이 없으면 아래에서 전체 업로드로 대신한다
+    shorts = await fetchPlaylistVideoIds(`UUSH${uploads.slice(2)}`, onProgress);
+  } catch (err) {
+    // 네트워크 오류, 사용량 초과 같은 다른 오류는 "숏츠 없음"으로 바꾸지 않고 그대로 알린다
+    throw err.reason === 'playlistNotFound' ? noShorts() : err;
   }
-  return { ids: await fetchPlaylistVideoIds(uploads, onProgress), label: `${name}의 전체 영상` };
+  if (!shorts.length) throw noShorts();
+  return { ids: shorts, label: `${name}의 숏츠` };
 }
 
 async function fetchVideosFromSource(source, onProgress) {
