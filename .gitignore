@@ -11,3 +11,6 @@ node_modules/
 Thumbs.db
 .vscode/
 .idea/
+
+# 점검 스크린샷 (tests/devcheck.py 출력)
+tests/output/
