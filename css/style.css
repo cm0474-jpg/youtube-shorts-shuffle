@@ -1228,39 +1228,3 @@ button.action:active .action-icon {
 .mode-hint:empty {
   display: none;
 }
-
-/* 길게 누르는 동안 위쪽 가운데에 뜨는 2배속 표시 (유튜브 숏츠처럼) */
-.speed-badge {
-  position: absolute;
-  top: calc(env(safe-area-inset-top) + 64px);
-  left: 50%;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 12px;
-  border-radius: 16px;
-  background: rgba(0, 0, 0, 0.6);
-  color: var(--fg);
-  font-size: 14px;
-  font-weight: 600;
-  opacity: 0;
-  transform: translateX(-50%);
-  transition: opacity 150ms ease;
-  pointer-events: none;
-}
-
-.speed-badge.show {
-  opacity: 1;
-}
-
-.speed-badge span {
-  display: flex;
-}
-
-.speed-badge svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
-}
-

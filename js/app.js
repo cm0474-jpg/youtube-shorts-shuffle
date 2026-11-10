@@ -34,7 +34,6 @@ const shuffleBtn = document.getElementById('shuffleBtn');
 const centerIcon = document.getElementById('centerIcon');
 const ytShareHit = document.getElementById('ytShareHit');
 const ytLogoHit = document.getElementById('ytLogoHit');
-const speedBadge = document.getElementById('speedBadge');
 
 // ===== 재생 순서 =====
 function shuffle(arr) {
@@ -313,14 +312,12 @@ function startFastForward() {
   pausedBeforeFast = state === YT.PlayerState.PAUSED || state === YT.PlayerState.CUED;
   player.setPlaybackRate(FAST_RATE);
   if (pausedBeforeFast) player.playVideo();
-  speedBadge.classList.add('show');
 }
 
 function stopFastForward() {
   fastForward = false;
   player.setPlaybackRate(1);
   if (pausedBeforeFast) player.pauseVideo();
-  speedBadge.classList.remove('show');
 }
 
 function cancelLongPress() {
