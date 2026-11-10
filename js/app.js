@@ -5,6 +5,8 @@ const SWIPE_DISTANCE = 80;   // 이 거리(px) 이상 끌면 다음/이전 영�
 const FLICK_SPEED = 0.5;     // 짧게 튕겨도 넘어가는 속도 (px/ms)
 const TAP_MAX_MOVE = 10;     // 이보다 적게 움직이면 탭으로 본다
 const TAP_MAX_TIME = 300;    // ms
+const LONG_PRESS_MS = 500;   // 이만큼 가만히 누르고 있으면 2배속
+const FAST_RATE = 2;
 const SLIDE_MS = 250;        // style.css 의 --slide-duration 과 맞춘다
 
 // ===== 상태 =====
@@ -32,6 +34,7 @@ const shuffleBtn = document.getElementById('shuffleBtn');
 const centerIcon = document.getElementById('centerIcon');
 const ytShareHit = document.getElementById('ytShareHit');
 const ytLogoHit = document.getElementById('ytLogoHit');
+const speedBadge = document.getElementById('speedBadge');
 
 // ===== 재생 순서 =====
 function shuffle(arr) {
@@ -126,6 +129,8 @@ function onPlayerStateChange(e) {
   if (e.data === YT.PlayerState.PLAYING) {
     errorStreak = 0;
     applyCaptionPreference(queue[pos]);
+    // 누르고 있는 동안 영상이 끝나 다음 영상으로 넘어가도 2배속을 이어 간다
+    if (fastForward) player.setPlaybackRate(FAST_RATE);
   } else if (e.data === YT.PlayerState.BUFFERING) {
     reapplyCaptionsOnNextPlay(); // 시간 이동 뒤 플레이어가 자막을 다시 켜는 것을 막는다 (menu.js)
   } else if (e.data === YT.PlayerState.ENDED) {
@@ -292,6 +297,37 @@ function updateTouchLayer(state) {
   ytLogoHit.hidden = !paused;
 }
 
+// ===== 길게 눌러 2배속 =====
+// 유튜브 숏츠처럼 화면을 길게 누르는 동안만 2배속으로 재생하고, 떼면 원래 속도로 돌아온다.
+// 멈춘 영상이면 누르는 동안 2배속으로 재생하고, 떼면 다시 멈춘다.
+let pressTimer = null;
+let fastForward = false;
+let pausedBeforeFast = false;
+
+function startFastForward() {
+  pressTimer = null;
+  if (!player?.getAvailablePlaybackRates?.().includes(FAST_RATE)) return; // 2배속을 막아 둔 영상
+  fastForward = true;
+  snapBack();
+  const state = player.getPlayerState();
+  pausedBeforeFast = state === YT.PlayerState.PAUSED || state === YT.PlayerState.CUED;
+  player.setPlaybackRate(FAST_RATE);
+  if (pausedBeforeFast) player.playVideo();
+  speedBadge.classList.add('show');
+}
+
+function stopFastForward() {
+  fastForward = false;
+  player.setPlaybackRate(1);
+  if (pausedBeforeFast) player.pauseVideo();
+  speedBadge.classList.remove('show');
+}
+
+function cancelLongPress() {
+  clearTimeout(pressTimer);
+  pressTimer = null;
+}
+
 // ===== 터치 / 마우스 스와이프 =====
 let dragging = false;
 let startY = 0;
@@ -306,11 +342,14 @@ touchLayer.addEventListener('pointerdown', (e) => {
   deltaY = 0;
   frame.classList.add('no-transition');
   touchLayer.setPointerCapture(e.pointerId);
+  cancelLongPress();
+  if (e.button === 0) pressTimer = setTimeout(startFastForward, LONG_PRESS_MS); // 마우스 오른쪽 버튼은 제외
 });
 
 touchLayer.addEventListener('pointermove', (e) => {
-  if (!dragging) return;
+  if (!dragging || fastForward) return; // 2배속 중에는 손가락을 움직여도 넘기지 않는다
   deltaY = e.clientY - startY;
+  if (Math.abs(deltaY) >= TAP_MAX_MOVE) cancelLongPress(); // 끌기 시작하면 스와이프로 본다
   frame.style.transform = `translateY(${deltaY}px)`;
 });
 
@@ -318,6 +357,11 @@ touchLayer.addEventListener('pointerup', () => {
   if (!dragging) return;
   dragging = false;
   frame.classList.remove('no-transition');
+  cancelLongPress();
+  if (fastForward) {
+    stopFastForward();
+    return;
+  }
 
   const distance = Math.abs(deltaY);
   const elapsed = performance.now() - startTime;
@@ -338,8 +382,13 @@ touchLayer.addEventListener('pointerup', () => {
 
 touchLayer.addEventListener('pointercancel', () => {
   dragging = false;
+  cancelLongPress();
+  if (fastForward) stopFastForward();
   snapBack();
 });
+
+// 길게 누를 때 휴대폰/브라우저의 메뉴가 뜨지 않게 한다
+touchLayer.addEventListener('contextmenu', (e) => e.preventDefault());
 
 // ===== PC 테스트용: 키보드 / 마우스 휠 =====
 document.addEventListener('keydown', (e) => {
