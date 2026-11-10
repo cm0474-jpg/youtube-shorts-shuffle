@@ -396,9 +396,35 @@ document.addEventListener('keydown', (e) => {
   if (e.target.matches('input, textarea') || isOverlayOpen()) return;
   if (e.key === 'ArrowDown' || e.key === 'ArrowRight') go(1);
   else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') go(-1);
-  else if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  else if (e.key === ' ') onSpaceDown(e);
   else if (e.key === 'm' || e.key === 'M') toggleSound();
 });
+
+// 스페이스바도 화면 누르기와 같다: 짧게 누르면 재생/일시정지, 길게 누르고 있으면 2배속.
+// 짧은지 긴지는 떼어 봐야 알 수 있으므로 재생/일시정지는 뗄 때 한다.
+let spaceDown = false;
+
+function onSpaceDown(e) {
+  e.preventDefault();
+  if (e.repeat || !player) return; // 누르고 있는 동안 브라우저가 반복해서 보내는 입력은 무시
+  spaceDown = true;
+  cancelLongPress();
+  pressTimer = setTimeout(startFastForward, LONG_PRESS_MS);
+}
+
+function endSpace(toggle) {
+  if (!spaceDown) return;
+  spaceDown = false;
+  cancelLongPress();
+  if (fastForward) stopFastForward();
+  else if (toggle) togglePlay();
+}
+
+document.addEventListener('keyup', (e) => {
+  if (e.key === ' ') endSpace(true);
+});
+// 누른 채로 다른 창으로 넘어가면 keyup 이 오지 않으므로 그때 원래대로 돌린다
+window.addEventListener('blur', () => endSpace(false));
 
 let lastWheel = 0;
 touchLayer.addEventListener('wheel', (e) => {
